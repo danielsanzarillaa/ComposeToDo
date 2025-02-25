@@ -21,6 +21,9 @@ sealed class ToDoDestinations(val route: String) {
             "addTask"
         }
     }
+    object EditTask : ToDoDestinations("editTask/{taskId}") {
+        fun createRoute(taskId: Int) = "editTask/$taskId"
+    }
     object Calendar : ToDoDestinations("calendar")
 }
 
@@ -40,6 +43,9 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
                 },
                 onNavigateToCalendar = {
                     navController.navigate(ToDoDestinations.Calendar.route)
+                },
+                onNavigateToEditTask = { taskId ->
+                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId))
                 }
             )
         }
@@ -61,7 +67,28 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
                 initialDate = date,
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                isEditMode = false
+            )
+        }
+
+        composable(
+            route = ToDoDestinations.EditTask.route,
+            arguments = listOf(
+                navArgument("taskId") {
+                    type = NavType.IntType
                 }
+            )
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: 0
+            
+            AddTaskScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                taskId = taskId,
+                isEditMode = true
             )
         }
 
@@ -73,6 +100,9 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
                 },
                 onNavigateToAddTask = { date ->
                     navController.navigate(ToDoDestinations.AddTask.createRoute(date))
+                },
+                onNavigateToEditTask = { taskId ->
+                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId))
                 }
             )
         }

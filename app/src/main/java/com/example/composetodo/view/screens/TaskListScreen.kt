@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -32,7 +33,8 @@ import kotlinx.coroutines.launch
 fun TaskListScreen(
     viewModel: TaskPresenter,
     onNavigateToAddTask: () -> Unit,
-    onNavigateToCalendar: () -> Unit
+    onNavigateToCalendar: () -> Unit,
+    onNavigateToEditTask: (Int) -> Unit
 ) {
     val tasksGroupedByDate by viewModel.allTasksGroupedByDate.collectAsState(initial = emptyMap())
     var lastDeletedTask by remember { mutableStateOf<Task?>(null) }
@@ -125,6 +127,9 @@ fun TaskListScreen(
                                 }
                                 lastDeletedTask = null
                             }
+                        },
+                        onEdit = {
+                            onNavigateToEditTask(task.id)
                         }
                     )
                 }
@@ -155,7 +160,8 @@ fun TaskListScreen(
 fun SwipeableTaskItem(
     task: Task,
     onTaskCheckedChange: (Boolean) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val dismissState = rememberSwipeToDismissBoxState(
@@ -240,6 +246,14 @@ fun SwipeableTaskItem(
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                            }
+                            
+                            IconButton(onClick = onEdit) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Editar tarea",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             }
                             
                             IconButton(onClick = { onTaskCheckedChange(!task.isCompleted) }) {

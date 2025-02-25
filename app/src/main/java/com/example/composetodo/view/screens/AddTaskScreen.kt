@@ -13,15 +13,33 @@ import androidx.compose.ui.unit.sp
 import com.example.composetodo.model.Priority
 import com.example.composetodo.presenter.TaskPresenter
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     viewModel: TaskPresenter,
     onNavigateBack: () -> Unit,
-    initialDate: LocalDate? = null
+    initialDate: LocalDate? = null,
+    taskId: Int = 0,
+    isEditMode: Boolean = false
 ) {
     val today = LocalDate.now()
+    val scope = rememberCoroutineScope()
+    
+    // Efecto para cargar la tarea si estamos en modo edición
+    LaunchedEffect(taskId) {
+        if (isEditMode && taskId > 0) {
+            viewModel.getTaskById(taskId)
+        } else {
+            viewModel.clearSelectedTask()
+        }
+    }
+    
+    // Estado para la tarea seleccionada
+    val selectedTask by viewModel.selectedTask.collectAsState()
+    
+    // Estados para los campos del formulario
     var taskTitle by remember { mutableStateOf("") }
     var taskDescription by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf(Priority.MEDIA) }
@@ -32,17 +50,36 @@ fun AddTaskScreen(
             } ?: today
         )
     }
+    
+    // Efecto para actualizar los campos cuando se carga la tarea en modo edición
+    LaunchedEffect(selectedTask) {
+        selectedTask?.let { task ->
+            taskTitle = task.title
+            taskDescription = task.description
+            selectedPriority = task.priority
+            selectedDate = task.scheduledDate
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nueva Tarea", fontSize = 24.sp, fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        if (isEditMode) "Editar Tarea" else "Nueva Tarea", 
+                        fontSize = 24.sp, 
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        viewModel.clearSelectedTask()
+                        onNavigateBack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             )
@@ -141,13 +178,26 @@ fun AddTaskScreen(
             Button(
                 onClick = {
                     if (taskTitle.isNotBlank() && !selectedDate.isBefore(today)) {
-                        viewModel.addTask(
-                            title = taskTitle,
-                            description = taskDescription,
-                            priority = selectedPriority,
-                            scheduledDate = selectedDate
-                        )
-                        onNavigateBack()
+                        scope.launch {
+                            if (isEditMode && taskId > 0) {
+                                viewModel.updateExistingTask(
+                                    taskId = taskId,
+                                    title = taskTitle,
+                                    description = taskDescription,
+                                    priority = selectedPriority,
+                                    scheduledDate = selectedDate
+                                )
+                            } else {
+                                viewModel.addTask(
+                                    title = taskTitle,
+                                    description = taskDescription,
+                                    priority = selectedPriority,
+                                    scheduledDate = selectedDate
+                                )
+                            }
+                            viewModel.clearSelectedTask()
+                            onNavigateBack()
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -157,7 +207,10 @@ fun AddTaskScreen(
                 ),
                 enabled = taskTitle.isNotBlank() && !selectedDate.isBefore(today)
             ) {
-                Text("Guardar Tarea", modifier = Modifier.padding(vertical = 4.dp))
+                Text(
+                    if (isEditMode) "Actualizar Tarea" else "Guardar Tarea", 
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
         }
     }

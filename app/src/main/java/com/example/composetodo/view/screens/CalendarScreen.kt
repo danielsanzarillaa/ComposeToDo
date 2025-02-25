@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,7 +32,8 @@ import kotlinx.coroutines.launch
 fun CalendarScreen(
     viewModel: TaskPresenter,
     onNavigateBack: () -> Unit,
-    onNavigateToAddTask: (LocalDate) -> Unit
+    onNavigateToAddTask: (LocalDate) -> Unit,
+    onNavigateToEditTask: (Int) -> Unit
 ) {
     val selectedDate by viewModel.selectedDate.collectAsState()
     val tasksForDate by viewModel.tasksForSelectedDate.collectAsState(initial = emptyList())
@@ -160,6 +162,9 @@ fun CalendarScreen(
                                             }
                                             lastDeletedTask = null
                                         }
+                                    },
+                                    onEdit = {
+                                        onNavigateToEditTask(task.id)
                                     }
                                 )
                             }
@@ -176,7 +181,8 @@ fun CalendarScreen(
 fun SwipeableCalendarTaskItem(
     task: Task,
     onTaskCheckedChange: (Boolean) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
@@ -236,20 +242,33 @@ fun SwipeableCalendarTaskItem(
                         modifier = Modifier.weight(1f)
                     )
                     
-                    IconButton(
-                        onClick = { onTaskCheckedChange(!task.isCompleted) }
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = if (task.isCompleted) 
-                                Icons.Filled.CheckCircle 
-                            else 
-                                Icons.Outlined.CheckCircle,
-                            contentDescription = "Completar tarea",
-                            tint = if (task.isCompleted)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.outline
-                        )
+                        IconButton(onClick = onEdit) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar tarea",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        IconButton(
+                            onClick = { onTaskCheckedChange(!task.isCompleted) }
+                        ) {
+                            Icon(
+                                imageVector = if (task.isCompleted) 
+                                    Icons.Filled.CheckCircle 
+                                else 
+                                    Icons.Outlined.CheckCircle,
+                                contentDescription = "Completar tarea",
+                                tint = if (task.isCompleted)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                 }
             }

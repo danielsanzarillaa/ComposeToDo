@@ -36,6 +36,9 @@ interface TaskDao {
     """)
     fun getTasksByDate(date: LocalDate): Flow<List<Task>>
 
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    suspend fun getTaskById(taskId: Int): Task?
+
     @Query("""
         SELECT DISTINCT scheduledDate 
         FROM tasks 

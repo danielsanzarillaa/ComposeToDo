@@ -23,6 +23,9 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
+    private val _selectedTask = MutableStateFlow<Task?>(null)
+    val selectedTask: StateFlow<Task?> = _selectedTask.asStateFlow()
+
     val allTasksGroupedByDate: Flow<Map<LocalDate, List<Task>>> = taskDao.getAllTasks()
         .map { tasks ->
             tasks.groupBy { it.scheduledDate }
@@ -44,6 +47,18 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
         _selectedDate.value = date
     }
 
+    fun getTaskById(taskId: Int) {
+        viewModelScope.launch {
+            taskDao.getTaskById(taskId)?.let { task ->
+                _selectedTask.value = task
+            }
+        }
+    }
+
+    fun clearSelectedTask() {
+        _selectedTask.value = null
+    }
+
     fun addTask(
         title: String,
         description: String = "",
@@ -59,6 +74,27 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
                 scheduledDate = scheduledDate
             )
             taskDao.addTask(task)
+        }
+    }
+
+    fun updateExistingTask(
+        taskId: Int,
+        title: String,
+        description: String,
+        priority: Priority,
+        scheduledDate: LocalDate
+    ) {
+        viewModelScope.launch {
+            val currentTask = taskDao.getTaskById(taskId)
+            if (currentTask != null) {
+                val updatedTask = currentTask.copy(
+                    title = title,
+                    description = description,
+                    priority = priority,
+                    scheduledDate = scheduledDate
+                )
+                taskDao.updateTask(updatedTask)
+            }
         }
     }
 
