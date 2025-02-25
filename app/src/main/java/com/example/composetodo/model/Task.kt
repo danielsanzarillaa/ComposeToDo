@@ -9,6 +9,7 @@ data class Task(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val title: String,
+    val description: String = "",
     val priority: Priority,
     val date: LocalDateTime = LocalDateTime.now(),
     val isCompleted: Boolean = false

@@ -15,10 +15,15 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
 
     val tasks: Flow<List<Task>> = taskDao.getAllTasks()
 
-    fun addTask(title: String, priority: Priority = Priority.MEDIA) {
+    fun addTask(
+        title: String,
+        description: String = "",
+        priority: Priority = Priority.MEDIA
+    ) {
         viewModelScope.launch {
             val task = Task(
                 title = title,
+                description = description,
                 priority = priority,
                 date = LocalDateTime.now()
             )

@@ -20,6 +20,7 @@ fun AddTaskScreen(
     onNavigateBack: () -> Unit
 ) {
     var taskTitle by remember { mutableStateOf("") }
+    var taskDescription by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf(Priority.MEDIA) }
 
     Scaffold(
@@ -54,6 +55,20 @@ fun AddTaskScreen(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
+            )
+
+            OutlinedTextField(
+                value = taskDescription,
+                onValueChange = { taskDescription = it },
+                label = { Text("Descripción (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                ),
+                minLines = 3,
+                maxLines = 5
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -96,7 +111,11 @@ fun AddTaskScreen(
             Button(
                 onClick = {
                     if (taskTitle.isNotBlank()) {
-                        viewModel.addTask(taskTitle, selectedPriority)
+                        viewModel.addTask(
+                            title = taskTitle,
+                            description = taskDescription,
+                            priority = selectedPriority
+                        )
                         onNavigateBack()
                     }
                 },

@@ -9,6 +9,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -155,6 +157,7 @@ fun SwipeableTaskItem(
     onTaskCheckedChange: (Boolean) -> Unit,
     onDelete: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
@@ -200,35 +203,69 @@ fun SwipeableTaskItem(
                 ),
                 shape = RectangleShape
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = task.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                        color = if (task.isCompleted)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    IconButton(onClick = { onTaskCheckedChange(!task.isCompleted) }) {
-                        Icon(
-                            imageVector = if (task.isCompleted)
-                                Icons.Filled.CheckCircle
-                            else
-                                Icons.Outlined.CheckCircle,
-                            contentDescription = "Completar tarea",
-                            tint = if (task.isCompleted)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.outline
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = task.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                            color = if (task.isCompleted) 
+                                MaterialTheme.colorScheme.onSurfaceVariant 
+                            else 
+                                MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (task.description.isNotEmpty()) {
+                                IconButton(onClick = { expanded = !expanded }) {
+                                    Icon(
+                                        imageVector = if (expanded) 
+                                            Icons.Default.KeyboardArrowUp 
+                                        else 
+                                            Icons.Default.KeyboardArrowDown,
+                                        contentDescription = if (expanded) 
+                                            "Ocultar descripción" 
+                                        else 
+                                            "Mostrar descripción",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            
+                            IconButton(onClick = { onTaskCheckedChange(!task.isCompleted) }) {
+                                Icon(
+                                    imageVector = if (task.isCompleted) 
+                                        Icons.Filled.CheckCircle 
+                                    else 
+                                        Icons.Outlined.CheckCircle,
+                                    contentDescription = "Completar tarea",
+                                    tint = if (task.isCompleted)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                    }
+                    
+                    if (expanded && task.description.isNotEmpty()) {
+                        Text(
+                            text = task.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                         )
                     }
                 }
