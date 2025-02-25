@@ -30,7 +30,10 @@ fun AddTaskScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
             )
         }
     ) { paddingValues ->
@@ -46,6 +49,7 @@ fun AddTaskScreen(
                 onValueChange = { taskTitle = it },
                 label = { Text("Título de la tarea") },
                 modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
@@ -70,7 +74,8 @@ fun AddTaskScreen(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { selectedPriority = priority },
                         color = backgroundColor,
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
+                        tonalElevation = 2.dp
                     ) {
                         Row(
                             modifier = Modifier
@@ -96,7 +101,10 @@ fun AddTaskScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 Text("Guardar Tarea", modifier = Modifier.padding(vertical = 4.dp))
             }

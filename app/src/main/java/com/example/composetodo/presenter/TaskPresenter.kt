@@ -26,9 +26,15 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun deleteTask(task: Task) {
+    fun deleteTask(taskId: Int) {
         viewModelScope.launch {
-            taskDao.deleteTask(task)
+            taskDao.deleteTaskById(taskId)
+        }
+    }
+
+    fun undoDeleteTask(task: Task) {
+        viewModelScope.launch {
+            taskDao.addTask(task.copy(id = 0))
         }
     }
 
