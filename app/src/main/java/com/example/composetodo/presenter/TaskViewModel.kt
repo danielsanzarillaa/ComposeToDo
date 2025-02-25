@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
-class TaskViewModel(application: Application) : AndroidViewModel(application) {
+class TaskPresenter(application: Application) : AndroidViewModel(application) {
     private val taskDao = TaskDatabase.getDatabase(application).taskDao()
 
     val tasks: Flow<List<Task>> = taskDao.getAllTasks()
@@ -22,7 +22,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 priority = priority,
                 date = LocalDateTime.now()
             )
-            taskDao.insertTask(task)
+            taskDao.addTask(task)
         }
     }
 

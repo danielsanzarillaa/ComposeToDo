@@ -1,4 +1,4 @@
-package com.example.composetodo.ui.screens
+package com.example.composetodo.view.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -11,12 +11,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.composetodo.model.Priority
-import com.example.composetodo.presenter.TaskViewModel
+import com.example.composetodo.presenter.TaskPresenter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
-    viewModel: TaskViewModel,
+    viewModel: TaskPresenter,
     onNavigateBack: () -> Unit
 ) {
     var taskTitle by remember { mutableStateOf("") }

@@ -12,13 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.composetodo.presenter.TaskViewModel
-import com.example.composetodo.ui.screens.AddTaskScreen
-import com.example.composetodo.ui.screens.TaskListScreen
+import com.example.composetodo.presenter.TaskPresenter
+import com.example.composetodo.view.screens.AddTaskScreen
+import com.example.composetodo.view.screens.TaskListScreen
 import com.example.composetodo.ui.theme.ComposeToDoTheme
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: TaskViewModel by viewModels()
+    private val viewModel: TaskPresenter by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ToDoApp(viewModel: TaskViewModel) {
+fun ToDoApp(viewModel: TaskPresenter) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "taskList") {

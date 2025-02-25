@@ -1,4 +1,4 @@
-package com.example.composetodo.ui.screens
+package com.example.composetodo.view.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,12 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.composetodo.model.Priority
 import com.example.composetodo.model.Task
-import com.example.composetodo.presenter.TaskViewModel
+import com.example.composetodo.presenter.TaskPresenter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
-    viewModel: TaskViewModel,
+    viewModel: TaskPresenter,
     onNavigateToAddTask: () -> Unit
 ) {
     val tasks by viewModel.tasks.collectAsState(initial = emptyList())
@@ -110,7 +110,6 @@ fun TaskListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskItem(
     task: Task,
@@ -122,9 +121,9 @@ fun TaskItem(
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = when (task.priority) {
-                Priority.ALTA -> Color(0xFFFFEDED)    // Rojo más claro
-                Priority.MEDIA -> Color(0xFFFFF8E1)   // Amarillo distintivo
-                Priority.BAJA -> Color(0xFFE8F5E9)    // Verde claro
+                Priority.ALTA -> Color(0xFFFFEDED)
+                Priority.MEDIA -> Color(0xFFFFF8E1)
+                Priority.BAJA -> Color(0xFFE8F5E9)
             }
         )
     ) {

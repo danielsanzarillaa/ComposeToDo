@@ -33,7 +33,7 @@ interface TaskDao {
     fun getTasksForDay(startOfDay: LocalDateTime, endOfDay: LocalDateTime): Flow<List<Task>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTask(task: Task)
+    suspend fun addTask(task: Task)
 
     @Delete
     suspend fun deleteTask(task: Task)
