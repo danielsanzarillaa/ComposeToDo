@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -30,31 +31,51 @@ import kotlinx.coroutines.launch
 @Composable
 fun TaskListScreen(
     viewModel: TaskPresenter,
-    onNavigateToAddTask: () -> Unit
+    onNavigateToAddTask: () -> Unit,
+    onNavigateToCalendar: () -> Unit
 ) {
-    val tasks by viewModel.tasks.collectAsState(initial = emptyList())
+    val tasksGroupedByDate by viewModel.allTasksGroupedByDate.collectAsState(initial = emptyMap())
     var lastDeletedTask by remember { mutableStateOf<Task?>(null) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
-        topBar = {
+        topBar = { 
             LargeTopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Mis Tareas",
-                            fontSize = 34.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Mantén tu día organizado",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                title = { 
+                    Text(
+                        "Mis Tareas",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             )
+        },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = true,
+                    onClick = { },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Tareas"
+                        )
+                    },
+                    label = { Text("Tareas") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateToCalendar,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Calendario"
+                        )
+                    },
+                    label = { Text("Calendario") }
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -74,20 +95,17 @@ fun TaskListScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            val pendingTasks = tasks.filter { !it.isCompleted }
-            val completedTasks = tasks.filter { it.isCompleted }
-
-            if (pendingTasks.isNotEmpty()) {
+            tasksGroupedByDate.forEach { (date, tasks) ->
                 item {
                     Text(
-                        "Tareas Pendientes",
+                        viewModel.formatDate(date),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                     )
                 }
 
-                items(pendingTasks, key = { it.id }) { task ->
+                items(tasks, key = { it.id }) { task ->
                     SwipeableTaskItem(
                         task = task,
                         onTaskCheckedChange = { isCompleted ->
@@ -112,38 +130,20 @@ fun TaskListScreen(
                 }
             }
 
-            if (completedTasks.isNotEmpty()) {
+            if (tasksGroupedByDate.isEmpty()) {
                 item {
-                    Text(
-                        "Completadas",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
-                    )
-                }
-
-                items(completedTasks, key = { it.id }) { task ->
-                    SwipeableTaskItem(
-                        task = task,
-                        onTaskCheckedChange = { isCompleted ->
-                            viewModel.updateTaskStatus(task.id, isCompleted)
-                        },
-                        onDelete = {
-                            scope.launch {
-                                lastDeletedTask = task
-                                viewModel.deleteTask(task.id)
-                                val result = snackbarHostState.showSnackbar(
-                                    message = "Tarea eliminada",
-                                    actionLabel = "Deshacer",
-                                    duration = SnackbarDuration.Short
-                                )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    lastDeletedTask?.let { viewModel.undoDeleteTask(it) }
-                                }
-                                lastDeletedTask = null
-                            }
-                        }
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No hay tareas",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

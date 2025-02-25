@@ -2,6 +2,7 @@ package com.example.composetodo.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(tableName = "tasks")
@@ -12,6 +13,7 @@ data class Task(
     val description: String = "",
     val priority: Priority,
     val date: LocalDateTime = LocalDateTime.now(),
+    val scheduledDate: LocalDate = LocalDate.now(),
     val isCompleted: Boolean = false
 )
 

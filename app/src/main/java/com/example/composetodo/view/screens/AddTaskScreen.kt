@@ -12,16 +12,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.composetodo.model.Priority
 import com.example.composetodo.presenter.TaskPresenter
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     viewModel: TaskPresenter,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    initialDate: LocalDate? = null
 ) {
+    val today = LocalDate.now()
     var taskTitle by remember { mutableStateOf("") }
     var taskDescription by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf(Priority.MEDIA) }
+    var selectedDate by remember { 
+        mutableStateOf(
+            initialDate?.let { 
+                if (it.isBefore(today)) today else it 
+            } ?: today
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -73,6 +83,26 @@ fun AddTaskScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
+                    "Fecha programada",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        text = viewModel.formatDate(selectedDate),
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
                     "Prioridad",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
@@ -81,8 +111,8 @@ fun AddTaskScreen(
                 Priority.values().forEach { priority ->
                     val backgroundColor = when (priority) {
                         Priority.ALTA -> Color(0xFFFEE2E2)
-                        Priority.MEDIA -> Color(0xFFFEF3C7)
-                        Priority.BAJA -> Color(0xFFDCFCE7)
+                        Priority.MEDIA -> Color(0xFFFFF8E1)
+                        Priority.BAJA -> Color(0xFFE8F5E9)
                     }
                     
                     Surface(
@@ -110,11 +140,12 @@ fun AddTaskScreen(
 
             Button(
                 onClick = {
-                    if (taskTitle.isNotBlank()) {
+                    if (taskTitle.isNotBlank() && !selectedDate.isBefore(today)) {
                         viewModel.addTask(
                             title = taskTitle,
                             description = taskDescription,
-                            priority = selectedPriority
+                            priority = selectedPriority,
+                            scheduledDate = selectedDate
                         )
                         onNavigateBack()
                     }
@@ -123,7 +154,8 @@ fun AddTaskScreen(
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
-                )
+                ),
+                enabled = taskTitle.isNotBlank() && !selectedDate.isBefore(today)
             ) {
                 Text("Guardar Tarea", modifier = Modifier.padding(vertical = 4.dp))
             }

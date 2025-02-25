@@ -9,7 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.composetodo.model.Task
 
-@Database(entities = [Task::class], version = 2, exportSchema = false)
+@Database(entities = [Task::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class TaskDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
