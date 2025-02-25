@@ -1,6 +1,5 @@
 package com.example.composetodo.view.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -66,48 +64,60 @@ fun CalendarScreen(
                 modifier = Modifier.padding(16.dp)
             )
 
-            Column(
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .weight(1f),
+                shape = MaterialTheme.shapes.large,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.surface
             ) {
-                if (!selectedDate.isBefore(today)) {
-                    Text(
-                        text = "Tareas para el ${viewModel.formatDate(selectedDate)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-
-                    FilledTonalButton(
-                        onClick = { onNavigateToAddTask(selectedDate) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    if (!selectedDate.isBefore(today)) {
+                        Text(
+                            text = "Tareas para el ${viewModel.formatDate(selectedDate)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text("Añadir tarea para esta fecha")
-                    }
 
-                    if (tasksForDate.isNotEmpty()) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .padding(horizontal = 16.dp)
-                                .padding(top = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        FilledTonalButton(
+                            onClick = { onNavigateToAddTask(selectedDate) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            shape = MaterialTheme.shapes.medium
                         ) {
-                            items(tasksForDate, key = { it.id }) { task ->
-                                CalendarTaskItem(task = task)
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                "Añadir tarea para esta fecha",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        if (tasksForDate.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(tasksForDate, key = { it.id }) { task ->
+                                    CalendarTaskItem(task = task)
+                                }
                             }
                         }
                     }
@@ -119,16 +129,15 @@ fun CalendarScreen(
 
 @Composable
 fun CalendarTaskItem(task: Task) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when (task.priority) {
-                Priority.ALTA -> Color(0xFFFFEDED)
-                Priority.MEDIA -> Color(0xFFFFF8E1)
-                Priority.BAJA -> Color(0xFFE8F5E9)
-            }
-        ),
-        shape = RectangleShape
+        shape = MaterialTheme.shapes.medium,
+        color = when (task.priority) {
+            Priority.ALTA -> Color(0xFFFFEDED)
+            Priority.MEDIA -> Color(0xFFFFF8E1)
+            Priority.BAJA -> Color(0xFFE8F5E9)
+        },
+        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -157,7 +166,8 @@ fun CalendarTaskItem(task: Task) {
                 tint = if (task.isCompleted)
                     MaterialTheme.colorScheme.primary
                 else
-                    MaterialTheme.colorScheme.outline
+                    MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
     }
