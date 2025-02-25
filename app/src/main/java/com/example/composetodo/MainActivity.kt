@@ -7,14 +7,9 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.example.composetodo.navigation.ToDoNavigation
 import com.example.composetodo.presenter.TaskPresenter
-import com.example.composetodo.view.screens.AddTaskScreen
-import com.example.composetodo.view.screens.TaskListScreen
 import com.example.composetodo.ui.theme.ComposeToDoTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,33 +23,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ToDoApp(viewModel)
+                    ToDoNavigation(viewModel)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun ToDoApp(viewModel: TaskPresenter) {
-    val navController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = "taskList") {
-        composable("taskList") {
-            TaskListScreen(
-                viewModel = viewModel,
-                onNavigateToAddTask = {
-                    navController.navigate("addTask")
-                }
-            )
-        }
-        composable("addTask") {
-            AddTaskScreen(
-                viewModel = viewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
         }
     }
 }
