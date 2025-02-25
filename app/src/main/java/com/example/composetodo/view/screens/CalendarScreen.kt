@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -97,22 +98,29 @@ fun CalendarScreen(
                     if (!selectedDate.isBefore(today)) {
                         FilledTonalButton(
                             onClick = { onNavigateToAddTask(selectedDate) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             ),
-                            shape = MaterialTheme.shapes.medium
+                            shape = MaterialTheme.shapes.medium,
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 4.dp,
+                                pressedElevation = 8.dp
+                            )
                         ) {
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = null,
-                                modifier = Modifier.padding(end = 8.dp)
+                                modifier = Modifier.padding(end = 8.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
                                 "Añadir tarea para esta fecha",
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
@@ -140,7 +148,8 @@ fun CalendarScreen(
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp)
                         ) {
                             items(tasksForDate, key = { it.id }) { task ->
                                 SwipeableCalendarTaskItem(
@@ -202,72 +211,86 @@ fun SwipeableCalendarTaskItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
+                val alpha = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) 1f else 0f
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Eliminar tarea",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    tint = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = alpha)
                 )
             }
         },
         content = {
-            Surface(
+            Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
-                color = when (task.priority) {
-                    Priority.ALTA -> Color(0xFFFFEDED)
-                    Priority.MEDIA -> Color(0xFFFFF8E1)
-                    Priority.BAJA -> Color(0xFFE8F5E9)
-                },
-                tonalElevation = 1.dp
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(1.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (task.priority) {
+                            Priority.ALTA -> Color(0xFFFFEDED)
+                            Priority.MEDIA -> Color(0xFFFFF8E1)
+                            Priority.BAJA -> Color(0xFFE8F5E9)
+                        }
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 0.dp
+                    ),
+                    shape = MaterialTheme.shapes.medium
                 ) {
-                    Text(
-                        text = task.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                        color = if (task.isCompleted) 
-                            MaterialTheme.colorScheme.onSurfaceVariant 
-                        else 
-                            MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
                     Row(
-                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = onEdit) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Editar tarea",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        Text(
+                            text = task.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                            color = if (task.isCompleted) 
+                                MaterialTheme.colorScheme.onSurfaceVariant 
+                            else 
+                                MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
                         
-                        IconButton(
-                            onClick = { onTaskCheckedChange(!task.isCompleted) }
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = if (task.isCompleted) 
-                                    Icons.Filled.CheckCircle 
-                                else 
-                                    Icons.Outlined.CheckCircle,
-                                contentDescription = "Completar tarea",
-                                tint = if (task.isCompleted)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.outline
-                            )
+                            IconButton(onClick = onEdit) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Editar tarea",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            IconButton(
+                                onClick = { onTaskCheckedChange(!task.isCompleted) }
+                            ) {
+                                Icon(
+                                    imageVector = if (task.isCompleted) 
+                                        Icons.Filled.CheckCircle 
+                                    else 
+                                        Icons.Outlined.CheckCircle,
+                                    contentDescription = "Completar tarea",
+                                    tint = if (task.isCompleted)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.outline
+                                )
+                            }
                         }
                     }
                 }

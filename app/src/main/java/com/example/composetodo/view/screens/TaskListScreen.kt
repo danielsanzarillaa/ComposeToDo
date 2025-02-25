@@ -83,9 +83,19 @@ fun TaskListScreen(
             FloatingActionButton(
                 onClick = onNavigateToAddTask,
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = MaterialTheme.shapes.medium,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 12.dp
+                ),
+                modifier = Modifier.size(64.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir tarea")
+                Icon(
+                    Icons.Default.Add, 
+                    contentDescription = "Añadir tarea",
+                    modifier = Modifier.size(28.dp)
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -182,105 +192,114 @@ fun SwipeableTaskItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
+                val alpha = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) 1f else 0f
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Eliminar tarea",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    tint = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = alpha)
                 )
             }
         },
         content = {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
                 colors = CardDefaults.cardColors(
-                    containerColor = when (task.priority) {
-                        Priority.ALTA -> Color(0xFFFFEDED)
-                        Priority.MEDIA -> Color(0xFFFFF8E1)
-                        Priority.BAJA -> Color(0xFFE8F5E9)
-                    }
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                ),
-                shape = RectangleShape
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = task.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                            color = if (task.isCompleted) 
-                                MaterialTheme.colorScheme.onSurfaceVariant 
-                            else 
-                                MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(1.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (task.priority) {
+                            Priority.ALTA -> Color(0xFFFFEDED)
+                            Priority.MEDIA -> Color(0xFFFFF8E1)
+                            Priority.BAJA -> Color(0xFFE8F5E9)
+                        }
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 0.dp
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column {
                         Row(
-                            horizontalArrangement = Arrangement.End,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (task.description.isNotEmpty()) {
-                                IconButton(onClick = { expanded = !expanded }) {
+                            Text(
+                                text = task.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                color = if (task.isCompleted) 
+                                    MaterialTheme.colorScheme.onSurfaceVariant 
+                                else 
+                                    MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            
+                            Row(
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (task.description.isNotEmpty()) {
+                                    IconButton(onClick = { expanded = !expanded }) {
+                                        Icon(
+                                            imageVector = if (expanded) 
+                                                Icons.Default.KeyboardArrowUp 
+                                            else 
+                                                Icons.Default.KeyboardArrowDown,
+                                            contentDescription = if (expanded) 
+                                                "Ocultar descripción" 
+                                            else 
+                                                "Mostrar descripción",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                
+                                IconButton(onClick = onEdit) {
                                     Icon(
-                                        imageVector = if (expanded) 
-                                            Icons.Default.KeyboardArrowUp 
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Editar tarea",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                
+                                IconButton(onClick = { onTaskCheckedChange(!task.isCompleted) }) {
+                                    Icon(
+                                        imageVector = if (task.isCompleted) 
+                                            Icons.Filled.CheckCircle 
                                         else 
-                                            Icons.Default.KeyboardArrowDown,
-                                        contentDescription = if (expanded) 
-                                            "Ocultar descripción" 
-                                        else 
-                                            "Mostrar descripción",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            Icons.Outlined.CheckCircle,
+                                        contentDescription = "Completar tarea",
+                                        tint = if (task.isCompleted)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.outline
                                     )
                                 }
                             }
-                            
-                            IconButton(onClick = onEdit) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Editar tarea",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            
-                            IconButton(onClick = { onTaskCheckedChange(!task.isCompleted) }) {
-                                Icon(
-                                    imageVector = if (task.isCompleted) 
-                                        Icons.Filled.CheckCircle 
-                                    else 
-                                        Icons.Outlined.CheckCircle,
-                                    contentDescription = "Completar tarea",
-                                    tint = if (task.isCompleted)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.outline
-                                )
-                            }
                         }
-                    }
-                    
-                    if (expanded && task.description.isNotEmpty()) {
-                        Text(
-                            text = task.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                        )
+                        
+                        if (expanded && task.description.isNotEmpty()) {
+                            Text(
+                                text = task.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                            )
+                        }
                     }
                 }
             }

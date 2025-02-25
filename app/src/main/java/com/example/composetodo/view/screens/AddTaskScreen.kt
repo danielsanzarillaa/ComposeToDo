@@ -1,17 +1,23 @@
 package com.example.composetodo.view.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.composetodo.model.Priority
 import com.example.composetodo.presenter.TaskPresenter
+import com.example.composetodo.view.components.Calendar
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -26,6 +32,9 @@ fun AddTaskScreen(
 ) {
     val today = LocalDate.now()
     val scope = rememberCoroutineScope()
+    
+    // Estado para controlar la visibilidad del diálogo de calendario
+    var showDatePicker by remember { mutableStateOf(false) }
     
     // Efecto para cargar la tarea si estamos en modo edición
     LaunchedEffect(taskId) {
@@ -58,6 +67,63 @@ fun AddTaskScreen(
             taskDescription = task.description
             selectedPriority = task.priority
             selectedDate = task.scheduledDate
+        }
+    }
+
+    // Diálogo para seleccionar fecha
+    if (showDatePicker) {
+        Dialog(
+            onDismissRequest = { showDatePicker = false },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Seleccionar fecha",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    
+                    Calendar(
+                        selectedDate = selectedDate,
+                        onDateSelected = { date ->
+                            // Solo permitir seleccionar fechas actuales o futuras
+                            if (!date.isBefore(today)) {
+                                selectedDate = date
+                                showDatePicker = false
+                            }
+                        },
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = { showDatePicker = false }
+                        ) {
+                            Text("Cancelar")
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -126,15 +192,30 @@ fun AddTaskScreen(
                 )
 
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true },
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Text(
-                        text = viewModel.formatDate(selectedDate),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = viewModel.formatDate(selectedDate),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Seleccionar fecha",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
