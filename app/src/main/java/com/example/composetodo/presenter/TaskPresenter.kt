@@ -10,15 +10,13 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 class TaskPresenter(application: Application) : AndroidViewModel(application) {
     private val taskDao = TaskDatabase.getDatabase(application).taskDao()
     private val locale = Locale("es", "ES")
-
-    val taskDates: Flow<List<LocalDate>> = taskDao.getTaskDates()
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
@@ -32,6 +30,7 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
                 .toSortedMap()
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val tasksForSelectedDate: Flow<List<Task>> = _selectedDate.flatMapLatest { date ->
         taskDao.getTasksByDate(date)
     }
@@ -113,12 +112,6 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
     fun updateTaskStatus(taskId: Int, isCompleted: Boolean) {
         viewModelScope.launch {
             taskDao.updateTaskStatus(taskId, isCompleted)
-        }
-    }
-
-    fun updateTask(task: Task) {
-        viewModelScope.launch {
-            taskDao.updateTask(task)
         }
     }
 } 

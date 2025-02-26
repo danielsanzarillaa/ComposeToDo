@@ -50,7 +50,6 @@ fun GenericTopBar(
  *
  * @param onNavigateBack Función que se ejecutará al pulsar el botón de navegación
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarTopBar(onNavigateBack: () -> Unit) {
     GenericTopBar(

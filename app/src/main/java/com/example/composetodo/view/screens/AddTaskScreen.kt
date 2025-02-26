@@ -3,7 +3,7 @@ package com.example.composetodo.view.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -142,7 +142,7 @@ fun AddTaskScreen(
                         viewModel.clearSelectedTask()
                         onNavigateBack()
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -226,7 +226,7 @@ fun AddTaskScreen(
                     fontWeight = FontWeight.Bold
                 )
                 
-                Priority.values().forEach { priority ->
+                Priority.entries.forEach { priority ->
                     val backgroundColor = when (priority) {
                         Priority.ALTA -> Color(0xFFFEE2E2)
                         Priority.MEDIA -> Color(0xFFFFF8E1)

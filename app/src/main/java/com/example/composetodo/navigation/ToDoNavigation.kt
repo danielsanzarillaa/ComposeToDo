@@ -13,18 +13,21 @@ import com.example.composetodo.view.screens.TaskListScreen
 import java.time.LocalDate
 
 sealed class ToDoDestinations(val route: String) {
-    object TaskList : ToDoDestinations("taskList")
-    object AddTask : ToDoDestinations("addTask?date={date}") {
+    data object TaskList : ToDoDestinations("taskList")
+    
+    data object AddTask : ToDoDestinations("addTask?date={date}") {
         fun createRoute(date: LocalDate? = null) = if (date != null) {
             "addTask?date=$date"
         } else {
             "addTask"
         }
     }
-    object EditTask : ToDoDestinations("editTask/{taskId}") {
+    
+    data object EditTask : ToDoDestinations("editTask/{taskId}") {
         fun createRoute(taskId: Int) = "editTask/$taskId"
     }
-    object Calendar : ToDoDestinations("calendar")
+    
+    data object Calendar : ToDoDestinations("calendar")
 }
 
 @Composable

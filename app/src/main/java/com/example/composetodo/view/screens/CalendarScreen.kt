@@ -11,7 +11,6 @@ import com.example.composetodo.view.components.Calendar
 import com.example.composetodo.view.components.CalendarTopBar
 import com.example.composetodo.view.components.TaskByDateCalendarComponent
 import java.time.LocalDate
-import kotlinx.coroutines.launch
 
 /**
  * Pantalla de calendario que muestra un calendario y las tareas para la fecha seleccionada.
@@ -27,7 +26,6 @@ import kotlinx.coroutines.launch
  * @param onNavigateToAddTask Función para navegar a la pantalla de añadir tarea
  * @param onNavigateToEditTask Función para navegar a la pantalla de editar tarea
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     viewModel: TaskPresenter,

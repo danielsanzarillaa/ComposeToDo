@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -73,7 +73,7 @@ private fun CalendarHeader(
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.KeyboardArrowLeft,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = "Mes anterior",
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -81,7 +81,8 @@ private fun CalendarHeader(
         }
         
         Text(
-            text = currentMonth.month.getDisplayName(TextStyle.FULL, locale).capitalize(locale) + " " + currentMonth.year,
+            text = currentMonth.month.getDisplayName(TextStyle.FULL, locale)
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() } + " " + currentMonth.year,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
@@ -91,7 +92,7 @@ private fun CalendarHeader(
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Mes siguiente",
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -103,7 +104,7 @@ private fun CalendarHeader(
 @Composable
 private fun DaysOfWeekHeader(locale: Locale) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        for (dayOfWeek in DayOfWeek.values()) {
+        for (dayOfWeek in DayOfWeek.entries) {
             Text(
                 text = dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
                 modifier = Modifier.weight(1f),
