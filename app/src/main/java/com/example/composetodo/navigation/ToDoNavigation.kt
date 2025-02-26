@@ -42,13 +42,22 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
             TaskListScreen(
                 viewModel = viewModel,
                 onNavigateToAddTask = {
-                    navController.navigate(ToDoDestinations.AddTask.createRoute())
+                    navController.navigate(ToDoDestinations.AddTask.createRoute()) {
+                        // Configuración para evitar múltiples instancias
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToCalendar = {
-                    navController.navigate(ToDoDestinations.Calendar.route)
+                    navController.navigate(ToDoDestinations.Calendar.route) {
+                        // Configuración para evitar múltiples instancias
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToEditTask = { taskId ->
-                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId))
+                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId)) {
+                        // Configuración para evitar múltiples instancias
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -69,7 +78,15 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
                 viewModel = viewModel,
                 initialDate = date,
                 onNavigateBack = {
-                    navController.popBackStack()
+                    // Asegurarse de que existe una pantalla a la que volver
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    } else {
+                        // Si no hay pantalla anterior, navegar a la lista de tareas
+                        navController.navigate(ToDoDestinations.TaskList.route) {
+                            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
+                        }
+                    }
                 },
                 isEditMode = false
             )
@@ -88,7 +105,15 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
             AddTaskScreen(
                 viewModel = viewModel,
                 onNavigateBack = {
-                    navController.popBackStack()
+                    // Asegurarse de que existe una pantalla a la que volver
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    } else {
+                        // Si no hay pantalla anterior, navegar a la lista de tareas
+                        navController.navigate(ToDoDestinations.TaskList.route) {
+                            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
+                        }
+                    }
                 },
                 taskId = taskId,
                 isEditMode = true
@@ -99,13 +124,27 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
             CalendarScreen(
                 viewModel = viewModel,
                 onNavigateBack = {
-                    navController.popBackStack()
+                    // Asegurarse de que existe una pantalla a la que volver
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    } else {
+                        // Si no hay pantalla anterior, navegar a la lista de tareas
+                        navController.navigate(ToDoDestinations.TaskList.route) {
+                            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
+                        }
+                    }
                 },
                 onNavigateToAddTask = { date ->
-                    navController.navigate(ToDoDestinations.AddTask.createRoute(date))
+                    navController.navigate(ToDoDestinations.AddTask.createRoute(date)) {
+                        // Configuración para evitar múltiples instancias
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToEditTask = { taskId ->
-                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId))
+                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId)) {
+                        // Configuración para evitar múltiples instancias
+                        launchSingleTop = true
+                    }
                 }
             )
         }
