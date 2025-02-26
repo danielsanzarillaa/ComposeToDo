@@ -1,4 +1,4 @@
-package com.example.composetodo.view.components.TaskListComponents
+package com.example.composetodo.view.components.taskListComponents
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

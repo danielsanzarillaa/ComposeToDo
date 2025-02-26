@@ -1,4 +1,4 @@
-package com.example.composetodo.view.components.TaskListComponents
+package com.example.composetodo.view.components.taskListComponents
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*

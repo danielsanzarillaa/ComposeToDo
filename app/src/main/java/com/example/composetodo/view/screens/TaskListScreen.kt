@@ -3,10 +3,6 @@ package com.example.composetodo.view.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -14,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.composetodo.model.Task
 import com.example.composetodo.presenter.TaskPresenter
-import com.example.composetodo.view.components.TaskListComponents.*
+import com.example.composetodo.view.components.taskListComponents.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,61 +61,6 @@ fun TaskListScreen(
             onTaskDeleted = { task -> lastDeletedTask = task },
             onUndoDelete = { lastDeletedTask = null },
             paddingValues = paddingValues
-        )
-    }
-}
-
-/**
- * Barra inferior de navegación
- */
-@Composable
-private fun TaskListBottomBar(onNavigateToCalendar: () -> Unit) {
-    NavigationBar {
-        NavigationBarItem(
-            selected = true,
-            onClick = { },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Tareas"
-                )
-            },
-            label = { Text("Tareas") }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onNavigateToCalendar,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = "Calendario"
-                )
-            },
-            label = { Text("Calendario") }
-        )
-    }
-}
-
-/**
- * Botón flotante para añadir una nueva tarea
- */
-@Composable
-private fun AddTaskFab(onNavigateToAddTask: () -> Unit) {
-    FloatingActionButton(
-        onClick = onNavigateToAddTask,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = MaterialTheme.shapes.medium,
-        elevation = FloatingActionButtonDefaults.elevation(
-            defaultElevation = 6.dp,
-            pressedElevation = 12.dp
-        ),
-        modifier = Modifier.size(64.dp)
-    ) {
-        Icon(
-            Icons.Default.Add, 
-            contentDescription = "Añadir tarea",
-            modifier = Modifier.size(28.dp)
         )
     }
 }

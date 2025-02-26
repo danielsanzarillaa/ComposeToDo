@@ -1,4 +1,4 @@
-package com.example.composetodo.view.components.CalendarComponents
+package com.example.composetodo.view.components.calendarComponents
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

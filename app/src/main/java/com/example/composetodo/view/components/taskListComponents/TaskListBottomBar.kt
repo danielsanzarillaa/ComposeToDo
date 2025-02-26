@@ -1,11 +1,10 @@
-package com.example.composetodo.view.components.TaskListComponents
+package com.example.composetodo.view.components.taskListComponents
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 
 /**
  * Barra inferior de navegación para la pantalla de lista de tareas.
