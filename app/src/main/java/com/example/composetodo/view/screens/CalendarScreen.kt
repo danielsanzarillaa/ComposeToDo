@@ -27,6 +27,11 @@ import com.example.composetodo.presenter.TaskPresenter
 import com.example.composetodo.view.components.Calendar
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +54,7 @@ fun CalendarScreen(
                 title = { Text("Calendario", fontSize = 24.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -147,9 +152,10 @@ fun CalendarScreen(
                         }
                     } else {
                         LazyColumn(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = PaddingValues(vertical = 8.dp)
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             items(tasksForDate, key = { it.id }) { task ->
                                 SwipeableCalendarTaskItem(
@@ -193,6 +199,7 @@ fun SwipeableCalendarTaskItem(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
@@ -242,42 +249,77 @@ fun SwipeableCalendarTaskItem(
                         }
                     ),
                     elevation = CardDefaults.cardElevation(
-                        defaultElevation = 0.dp
+                        defaultElevation = 2.dp,
+                        pressedElevation = 4.dp
                     ),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = task.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                            color = if (task.isCompleted) 
-                                MaterialTheme.colorScheme.onSurfaceVariant 
-                            else 
-                                MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        
+                    Column {
+                        // Encabezado con título
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = task.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                color = if (task.isCompleted) 
+                                    MaterialTheme.colorScheme.onSurfaceVariant 
+                                else 
+                                    MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        
+                        // Fila de acciones
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = onEdit) {
+                            if (task.description.isNotEmpty()) {
+                                TextButton(
+                                    onClick = { expanded = !expanded },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = if (expanded) "Ocultar" else "Mostrar descripción",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Icon(
+                                        imageVector = if (expanded) 
+                                            Icons.Default.KeyboardArrowUp 
+                                        else 
+                                            Icons.Default.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            
+                            IconButton(
+                                onClick = onEdit,
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Editar tarea",
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                             
                             IconButton(
-                                onClick = { onTaskCheckedChange(!task.isCompleted) }
+                                onClick = { onTaskCheckedChange(!task.isCompleted) },
+                                modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
                                     imageVector = if (task.isCompleted) 
@@ -288,7 +330,41 @@ fun SwipeableCalendarTaskItem(
                                     tint = if (task.isCompleted)
                                         MaterialTheme.colorScheme.primary
                                     else
-                                        MaterialTheme.colorScheme.outline
+                                        MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        
+                        // Descripción expandible
+                        AnimatedVisibility(
+                            visible = expanded && task.description.isNotEmpty(),
+                            enter = fadeIn(animationSpec = tween(200)) + 
+                                   expandVertically(
+                                       animationSpec = tween(300, easing = EaseOutQuad),
+                                       expandFrom = Alignment.Top
+                                   ),
+                            exit = fadeOut(animationSpec = tween(200)) + 
+                                  shrinkVertically(
+                                      animationSpec = tween(300, easing = EaseInQuad),
+                                      shrinkTowards = Alignment.Top
+                                  )
+                        ) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = task.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                    lineHeight = 20.sp,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
