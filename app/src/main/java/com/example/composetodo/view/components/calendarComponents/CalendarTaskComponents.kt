@@ -1,4 +1,4 @@
-package com.example.composetodo.view.components
+package com.example.composetodo.view.components.CalendarComponents
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*

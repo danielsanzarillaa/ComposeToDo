@@ -17,9 +17,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.composetodo.model.Priority
 import com.example.composetodo.presenter.TaskPresenter
-import com.example.composetodo.view.components.Calendar
+import com.example.composetodo.view.components.CalendarComponents.Calendar
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

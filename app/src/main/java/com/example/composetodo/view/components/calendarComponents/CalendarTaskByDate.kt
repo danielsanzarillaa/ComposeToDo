@@ -1,4 +1,4 @@
-package com.example.composetodo.view.components
+package com.example.composetodo.view.components.CalendarComponents
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -66,7 +66,10 @@ fun TaskByDateCalendarComponent(
 
             // Mostrar mensaje si no hay tareas o la lista de tareas
             if (tasksForDate.isEmpty()) {
-                EmptyTasksMessage(selectedDate, today)
+                EmptyTasksMessage(
+                    selectedDate,
+                    today
+                )
             } else {
                 TasksList(
                     tasksForDate = tasksForDate,

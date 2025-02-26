@@ -7,10 +7,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.composetodo.model.Task
 import com.example.composetodo.presenter.TaskPresenter
-import com.example.composetodo.view.components.Calendar
-import com.example.composetodo.view.components.CalendarTopBar
-import com.example.composetodo.view.components.TaskByDateCalendarComponent
+import com.example.composetodo.view.components.CalendarComponents.Calendar
+import com.example.composetodo.view.components.CalendarComponents.CalendarTopBar
+import com.example.composetodo.view.components.CalendarComponents.TaskByDateCalendarComponent
 import java.time.LocalDate
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla de calendario que muestra un calendario y las tareas para la fecha seleccionada.
