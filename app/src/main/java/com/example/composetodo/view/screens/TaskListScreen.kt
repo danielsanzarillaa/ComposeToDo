@@ -36,7 +36,6 @@ import androidx.compose.foundation.BorderStroke
  * @param onNavigateToCalendar Función para navegar a la pantalla de calendario
  * @param onNavigateToEditTask Función para navegar a la pantalla de editar tarea
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
     viewModel: TaskPresenter,
@@ -45,7 +44,6 @@ fun TaskListScreen(
     onNavigateToEditTask: (Int) -> Unit
 ) {
     val tasksGroupedByDate by viewModel.allTasksGroupedByDate.collectAsState(initial = emptyMap())
-    var lastDeletedTask by remember { mutableStateOf<Task?>(null) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val today = LocalDate.now()
@@ -65,9 +63,6 @@ fun TaskListScreen(
                 onNavigateToEditTask = onNavigateToEditTask,
                 snackbarHostState = snackbarHostState,
                 scope = scope,
-                lastDeletedTask = lastDeletedTask,
-                onTaskDeleted = { task -> lastDeletedTask = task },
-                onUndoDelete = { lastDeletedTask = null },
                 paddingValues = paddingValues
             )
             
@@ -184,9 +179,6 @@ private fun TaskList(
     onNavigateToEditTask: (Int) -> Unit,
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope,
-    lastDeletedTask: Task?,
-    onTaskDeleted: (Task) -> Unit,
-    onUndoDelete: () -> Unit,
     paddingValues: PaddingValues
 ) {
     LazyColumn(
@@ -220,7 +212,6 @@ private fun TaskList(
                         scope.launch {
                             // Guardar la tarea localmente antes de eliminarla
                             val deletedTask = task
-                            onTaskDeleted(deletedTask)
                             
                             // Eliminar la tarea
                             viewModel.deleteTask(task.id)
@@ -236,7 +227,6 @@ private fun TaskList(
                             if (result == SnackbarResult.ActionPerformed) {
                                 // Recuperar la tarea usando la variable local
                                 viewModel.undoDeleteTask(deletedTask)
-                                onUndoDelete()
                             }
                         }
                     },

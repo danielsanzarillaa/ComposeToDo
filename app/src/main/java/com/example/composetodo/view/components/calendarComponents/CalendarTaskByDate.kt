@@ -27,9 +27,6 @@ fun TaskByDateCalendarComponent(
     onNavigateToEditTask: (Int) -> Unit,
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope,
-    onTaskDeleted: (Task) -> Unit,
-    lastDeletedTask: Task?,
-    onUndoDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -80,7 +77,6 @@ fun TaskByDateCalendarComponent(
                         scope.launch {
                             // Guardar la tarea localmente antes de eliminarla
                             val deletedTask = task
-                            onTaskDeleted(deletedTask)
                             
                             // Eliminar la tarea
                             viewModel.deleteTask(task.id)
@@ -96,7 +92,6 @@ fun TaskByDateCalendarComponent(
                             if (result == SnackbarResult.ActionPerformed) {
                                 // Recuperar la tarea usando la variable local
                                 viewModel.undoDeleteTask(deletedTask)
-                                onUndoDelete()
                             }
                         }
                     },

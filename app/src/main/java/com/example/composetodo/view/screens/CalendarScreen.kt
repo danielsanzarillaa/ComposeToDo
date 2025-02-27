@@ -12,7 +12,6 @@ import com.example.composetodo.view.components.calendarComponents.CalendarTopBar
 import com.example.composetodo.view.components.calendarComponents.TaskByDateCalendarComponent
 import java.time.LocalDate
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 
 /**
  * Pantalla de calendario que muestra un calendario y las tareas para la fecha seleccionada.
@@ -39,7 +38,6 @@ fun CalendarScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val tasksForDate by viewModel.tasksForSelectedDate.collectAsState(initial = emptyList())
     val today = LocalDate.now()
-    var lastDeletedTask by remember { mutableStateOf<Task?>(null) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -71,9 +69,6 @@ fun CalendarScreen(
                 onNavigateToEditTask = onNavigateToEditTask,
                 snackbarHostState = snackbarHostState,
                 scope = scope,
-                onTaskDeleted = { task -> lastDeletedTask = task },
-                lastDeletedTask = lastDeletedTask,
-                onUndoDelete = { lastDeletedTask = null },
                 modifier = Modifier.weight(1f)
             )
         }

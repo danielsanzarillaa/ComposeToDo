@@ -8,235 +8,208 @@ import com.example.composetodo.model.Task
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import android.app.ActivityManager
-import android.os.Build
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import android.os.PowerManager
 import java.time.format.DateTimeFormatter
 import com.example.composetodo.model.Priority
+import android.util.Log
 
 /**
  * BroadcastReceiver que recibe las intenciones de alarma y muestra las notificaciones
  */
 class NotificationReceiver : BroadcastReceiver() {
 
+    companion object {
+        private const val TAG = "NotificationReceiver"
+        const val ACTION_SHOW_NOTIFICATION = "com.example.composetodo.SHOW_NOTIFICATION"
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         // Verificar que la acción sea la correcta
-        if (intent.action != ACTION_SHOW_NOTIFICATION) {
-            return
-        }
+        if (intent.action != ACTION_SHOW_NOTIFICATION) return
         
         val taskId = intent.getIntExtra("taskId", -1)
+        if (taskId == -1) return
+        
         val isBackup = intent.getBooleanExtra("isBackup", false)
         val isPreview = intent.getBooleanExtra("isPreview", false)
-        val isTest = taskId == 999999 // ID especial para pruebas
+        
+        // Si es una notificación de respaldo, verificar si la principal ya se mostró
+        if (isBackup && isBackupAlreadyShown(context, taskId)) return
         
         // Obtener datos adicionales que pueden venir en el intent
         val taskTitle = intent.getStringExtra("taskTitle")
-        val taskDescription = intent.getStringExtra("taskDescription")
+        val taskDescription = intent.getStringExtra("taskDescription") ?: ""
         val scheduledTime = intent.getStringExtra("scheduledTime")
         
-        // Si es una notificación de respaldo, verificar si la principal ya se mostró
-        if (isBackup && !isTest) {
-            val sharedPrefs = context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
-            val notificationKey = "notification_shown_$taskId"
-            
-            if (sharedPrefs.getBoolean(notificationKey, false)) {
-                return
-            }
+        Log.d(TAG, "Procesando notificación para tarea: $taskId, título: $taskTitle")
+        
+        // Adquirir wakelock para asegurar que la operación se complete
+        val wakeLock = acquireWakeLock(context)
+        if (wakeLock == null) {
+            Log.w(TAG, "No se pudo adquirir wakelock para la tarea: $taskId")
         }
         
-        if (taskId != -1) {
-            // Adquirir wakelock para asegurar que la operación se complete
-            val wakeLock = acquireWakeLock(context)
-            
-            try {
-                // Para tareas de prueba, mostrar la notificación inmediatamente
-                if (isTest) {
-                    val testTask = Task(
-                        id = taskId,
-                        title = "Tarea de prueba",
-                        description = "Esta es una notificación de prueba generada a las ${LocalDateTime.now()}",
-                        priority = Priority.ALTA
+        // Estructura principal protegida con try-finally para garantizar la liberación del wakeLock
+        try {
+            // Utilizamos coroutines para todo el procesamiento
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    processNotification(
+                        context = context,
+                        taskId = taskId,
+                        taskTitle = taskTitle,
+                        taskDescription = taskDescription,
+                        scheduledTime = scheduledTime,
+                        isPreview = isPreview,
+                        isBackup = isBackup
                     )
-                    
-                    // Mostrar la notificación en el hilo principal
-                    CoroutineScope(Dispatchers.Main).launch {
-                        try {
-                            val notificationBuilder = NotificationBuilder(context)
-                            notificationBuilder.showTaskNotification(testTask)
-                        } catch (e: Exception) {
-                            // Manejo silencioso de errores
-                        } finally {
-                            // Liberar el wakelock
-                            releaseWakeLock(wakeLock)
-                        }
-                    }
-                    return
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error al procesar notificación: ${e.message}", e)
+                } finally {
+                    // Liberar el wakelock, siempre se ejecuta
+                    releaseWakeLock(wakeLock)
                 }
-                
-                // Si tenemos los datos completos en el intent, podemos mostrar la notificación sin consultar la base de datos
-                if (taskTitle != null && taskDescription != null) {
-                    // Crear una tarea temporal con los datos del intent
-                    val tempTask = Task(
-                        id = taskId,
-                        title = taskTitle,
-                        description = taskDescription ?: "",
-                        priority = Priority.ALTA, // Prioridad por defecto
-                        reminderDateTime = if (scheduledTime != null) {
-                            try {
-                                LocalDateTime.parse(scheduledTime, DateTimeFormatter.ISO_DATE_TIME)
-                            } catch (e: Exception) {
-                                LocalDateTime.now()
-                            }
-                        } else {
-                            LocalDateTime.now()
-                        }
-                    )
-                    
-                    // Mostrar la notificación directamente
-                    CoroutineScope(Dispatchers.Main).launch {
-                        try {
-                            val notificationBuilder = NotificationBuilder(context)
-                            val hasPermission = notificationBuilder.hasNotificationPermission()
-                            
-                            if (hasPermission) {
-                                // Personalizar el mensaje según el tipo de notificación
-                                val finalTask = when {
-                                    isPreview -> {
-                                        // Para notificaciones previas, añadir un prefijo al título
-                                        tempTask.copy(
-                                            title = "⏰ Recordatorio previo: ${tempTask.title}",
-                                            description = "Esta tarea está programada para dentro de 5 minutos. ${tempTask.description}"
-                                        )
-                                    }
-                                    isBackup -> {
-                                        // Para notificaciones de respaldo, añadir un sufijo al título
-                                        tempTask.copy(
-                                            title = "${tempTask.title} (recordatorio)",
-                                            description = "¡No olvides esta tarea! ${tempTask.description}"
-                                        )
-                                    }
-                                    else -> tempTask
-                                }
-                                
-                                notificationBuilder.showTaskNotification(finalTask)
-                                
-                                // Marcar la notificación como mostrada
-                                if (!isPreview) {
-                                    markNotificationAsShown(context, taskId)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            // Manejo silencioso de errores
-                        } finally {
-                            releaseWakeLock(wakeLock)
-                        }
-                    }
-                    return
-                }
-                
-                // Si no tenemos los datos completos, consultamos la base de datos
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val task = TaskDatabase.getDatabase(context).taskDao().getTaskById(taskId)
-                        
-                        task?.let {
-                            // Para notificaciones de respaldo, verificamos si la tarea sigue pendiente
-                            if (isBackup) {
-                                // Procesar notificación de respaldo
-                            } else if (isPreview) {
-                                // Procesar notificación previa
-                            }
-                            
-                            // Solo mostrar notificación si la tarea aún existe, no está completada,
-                            // y el recordatorio no ha caducado hace mucho
-                            if (!it.isCompleted && isReminderValid(it)) {
-                                // Comprobamos si la aplicación está en primer plano
-                                val isAppInForeground = isAppInForeground(context)
-                                
-                                // Siempre mostrar la notificación, incluso si la app está en primer plano
-                                withContext(Dispatchers.Main) {
-                                    try {
-                                        val notificationBuilder = NotificationBuilder(context)
-                                        val hasPermission = notificationBuilder.hasNotificationPermission()
-                                        
-                                        if (hasPermission) {
-                                            // Personalizar el mensaje según el tipo de notificación
-                                            val finalTask = when {
-                                                isPreview -> {
-                                                    // Para notificaciones previas, añadir un prefijo al título
-                                                    it.copy(
-                                                        title = "⏰ Recordatorio previo: ${it.title}",
-                                                        description = "Esta tarea está programada para dentro de 5 minutos. ${it.description}"
-                                                    )
-                                                }
-                                                isBackup -> {
-                                                    // Para notificaciones de respaldo, añadir un sufijo al título
-                                                    it.copy(
-                                                        title = "${it.title} (recordatorio)",
-                                                        description = "¡No olvides esta tarea! ${it.description}"
-                                                    )
-                                                }
-                                                else -> it
-                                            }
-                                            
-                                            notificationBuilder.showTaskNotification(finalTask)
-                                            
-                                            // Marcar la notificación como mostrada
-                                            if (!isPreview) {
-                                                markNotificationAsShown(context, taskId)
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        // Manejo silencioso de errores
-                                    }
-                                }
-                            } else {
-                                // No mostrar notificación por alguna razón específica
-                                // (tarea completada o recordatorio no válido)
-                            }
-                        } ?: run {
-                            // Si no encontramos la tarea en la base de datos pero tenemos datos en el intent,
-                            // intentamos mostrar la notificación con esos datos
-                            if (taskTitle != null) {
-                                withContext(Dispatchers.Main) {
-                                    try {
-                                        val tempTask = Task(
-                                            id = taskId,
-                                            title = taskTitle,
-                                            description = taskDescription ?: "",
-                                            priority = Priority.ALTA
-                                        )
-                                        
-                                        val notificationBuilder = NotificationBuilder(context)
-                                        if (notificationBuilder.hasNotificationPermission()) {
-                                            notificationBuilder.showTaskNotification(tempTask)
-                                            
-                                            // Marcar la notificación como mostrada
-                                            if (!isPreview) {
-                                                markNotificationAsShown(context, taskId)
-                                            }
-                                        } else {
-                                            // No hay permisos, no hacer nada
-                                        }
-                                    } catch (e: Exception) {
-                                        // Manejo silencioso de errores
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // Manejo silencioso de errores
-                    } finally {
-                        // Liberar el wakelock
-                        releaseWakeLock(wakeLock)
-                    }
-                }
-            } catch (e: Exception) {
-                releaseWakeLock(wakeLock)
             }
+        } catch (e: Exception) {
+            // En caso de error crítico, aseguramos la liberación del wakeLock
+            Log.e(TAG, "Error crítico al iniciar procesamiento: ${e.message}", e)
+            releaseWakeLock(wakeLock)
+        }
+    }
+    
+    /**
+     * Procesa una notificación normal (no de prueba)
+     */
+    private suspend fun processNotification(
+        context: Context,
+        taskId: Int,
+        taskTitle: String?,
+        taskDescription: String,
+        scheduledTime: String?,
+        isPreview: Boolean,
+        isBackup: Boolean
+    ) {
+        try {
+            // Intentamos obtener la tarea de la base de datos
+            val dbTask = TaskDatabase.getDatabase(context).taskDao().getTaskById(taskId)
+            
+            if (dbTask != null) {
+                Log.d(TAG, "Tarea encontrada en DB: ${dbTask.title}")
+            } else {
+                Log.d(TAG, "Tarea no encontrada en DB, usando datos del intent")
+            }
+            
+            // Definimos la tarea a mostrar
+            val taskToShow = when {
+                // Caso 1: Tenemos la tarea en la base de datos y está vigente
+                dbTask != null && !dbTask.isCompleted && isReminderValid(dbTask) -> {
+                    // Personalizar el mensaje según el tipo de notificación
+                    when {
+                        isPreview -> dbTask.copy(
+                            title = "⏰ Recordatorio previo: ${dbTask.title}",
+                            description = "Esta tarea está programada para dentro de 5 minutos. ${dbTask.description}"
+                        )
+                        isBackup -> dbTask.copy(
+                            title = "${dbTask.title} (recordatorio)",
+                            description = "¡No olvides esta tarea! ${dbTask.description}"
+                        )
+                        else -> dbTask
+                    }
+                }
+                // Caso 2: No tenemos la tarea en la DB pero tenemos al menos el título
+                taskTitle != null -> {
+                    createTaskFromIntent(taskId, taskTitle, taskDescription, scheduledTime, isPreview, isBackup)
+                }
+                // Caso 3: No tenemos información suficiente para mostrar la notificación
+                else -> null
+            }
+            
+            // Si tenemos una tarea para mostrar, lo hacemos
+            if (taskToShow != null) {
+                Log.d(TAG, "Mostrando notificación para: ${taskToShow.title}")
+                withContext(Dispatchers.Main) {
+                    val notificationBuilder = NotificationBuilder(context)
+                    if (notificationBuilder.hasNotificationPermission()) {
+                        notificationBuilder.showTaskNotification(taskToShow)
+                        
+                        // Para notificaciones normales, marcarlas como mostradas
+                        // Para vistas previas, solo registrar en el log
+                        if (!isPreview) {
+                            markNotificationAsShown(context, taskId)
+                        } else {
+                            Log.d(TAG, "Vista previa de notificación mostrada, no se marca como mostrada permanentemente")
+                        }
+                    } else {
+                        Log.w(TAG, "No hay permiso para mostrar notificaciones")
+                    }
+                }
+            } else {
+                Log.w(TAG, "No hay información suficiente para mostrar la notificación")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error durante el procesamiento de la notificación: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * Crea una tarea a partir de los datos del intent
+     */
+    private fun createTaskFromIntent(
+        taskId: Int,
+        taskTitle: String,
+        taskDescription: String,
+        scheduledTime: String?,
+        isPreview: Boolean,
+        isBackup: Boolean
+    ): Task {
+        val baseTask = Task(
+            id = taskId,
+            title = taskTitle,
+            description = taskDescription,
+            priority = Priority.ALTA,
+            reminderDateTime = parseScheduledTime(scheduledTime)
+        )
+        
+        return when {
+            isPreview -> baseTask.copy(
+                title = "⏰ Recordatorio previo: ${baseTask.title}",
+                description = "Esta tarea está programada para dentro de 5 minutos. ${baseTask.description}"
+            )
+            isBackup -> baseTask.copy(
+                title = "${baseTask.title} (recordatorio)",
+                description = "¡No olvides esta tarea! ${baseTask.description}"
+            )
+            else -> baseTask
+        }
+    }
+    
+    /**
+     * Convierte un string de fecha en LocalDateTime
+     */
+    private fun parseScheduledTime(scheduledTime: String?): LocalDateTime {
+        if (scheduledTime == null) return LocalDateTime.now()
+        
+        return try {
+            LocalDateTime.parse(scheduledTime, DateTimeFormatter.ISO_DATE_TIME)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error al parsear fecha: $scheduledTime, usando actual", e)
+            LocalDateTime.now()
+        }
+    }
+    
+    /**
+     * Verifica si una notificación de respaldo ya se mostró
+     */
+    private fun isBackupAlreadyShown(context: Context, taskId: Int): Boolean {
+        try {
+            val sharedPrefs = context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
+            val notificationKey = "notification_shown_$taskId"
+            return sharedPrefs.getBoolean(notificationKey, false)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al verificar estado de notificación: ${e.message}", e)
+            return false
         }
     }
     
@@ -252,8 +225,9 @@ class NotificationReceiver : BroadcastReceiver() {
                 putBoolean(notificationKey, true)
                 apply()
             }
+            Log.d(TAG, "Notificación marcada como mostrada: $taskId")
         } catch (e: Exception) {
-            // Manejo silencioso de errores
+            Log.e(TAG, "Error al marcar notificación como mostrada: ${e.message}", e)
         }
     }
     
@@ -279,78 +253,31 @@ class NotificationReceiver : BroadcastReceiver() {
      * Adquiere un wakelock para asegurar que el procesamiento se complete
      */
     private fun acquireWakeLock(context: Context): PowerManager.WakeLock? {
-        try {
+        return try {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            val wakeLock = powerManager.newWakeLock(
+            powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
                 "ComposeToDo:NotificationWakeLock"
-            )
-            
-            // Adquirir el wakelock con timeout de 60 segundos
-            wakeLock.acquire(60000L)
-            
-            return wakeLock
+            ).apply {
+                acquire(60000L) // Adquirir con timeout de 60 segundos
+            }
         } catch (e: Exception) {
-            return null
+            Log.e(TAG, "Error al adquirir wakelock: ${e.message}", e)
+            null
         }
     }
     
     /**
-     * Libera el wakelock
+     * Libera el wakelock de forma segura
      */
     private fun releaseWakeLock(wakeLock: PowerManager.WakeLock?) {
-        if (wakeLock == null) return
-        
         try {
-            if (wakeLock.isHeld) {
+            if (wakeLock?.isHeld == true) {
                 wakeLock.release()
+                Log.d(TAG, "Wakelock liberado")
             }
         } catch (e: Exception) {
-            // Manejo silencioso de errores
+            Log.e(TAG, "Error al liberar wakelock: ${e.message}", e)
         }
-    }
-    
-    /**
-     * Comprueba si la aplicación está actualmente en primer plano
-     */
-    private fun isAppInForeground(context: Context): Boolean {
-        try {
-            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            
-            // Diferentes implementaciones según la versión de Android
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Android 10+
-                val runningProcesses = activityManager.runningAppProcesses
-                if (runningProcesses != null) {
-                    for (processInfo in runningProcesses) {
-                        if (processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
-                            processInfo.processName == context.packageName) {
-                            return true
-                        }
-                    }
-                }
-                return false
-            } else {
-                // Versiones anteriores
-                val appProcesses = activityManager.runningAppProcesses
-                if (appProcesses != null) {
-                    val packageName = context.packageName
-                    for (appProcess in appProcesses) {
-                        if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && 
-                            appProcess.processName == packageName) {
-                            return true
-                        }
-                    }
-                }
-                return false
-            }
-        } catch (e: Exception) {
-            return false
-        }
-    }
-    
-    companion object {
-        private const val TAG = "NotificationReceiver"
-        const val ACTION_SHOW_NOTIFICATION = "com.example.composetodo.SHOW_NOTIFICATION"
     }
 } 
