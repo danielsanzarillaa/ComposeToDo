@@ -1,6 +1,8 @@
 package com.example.composetodo.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,22 +44,13 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
             TaskListScreen(
                 viewModel = viewModel,
                 onNavigateToAddTask = {
-                    navController.navigate(ToDoDestinations.AddTask.createRoute()) {
-                        // Configuración para evitar múltiples instancias
-                        launchSingleTop = true
-                    }
+                    navController.navigateSingleTop(ToDoDestinations.AddTask.createRoute())
                 },
                 onNavigateToCalendar = {
-                    navController.navigate(ToDoDestinations.Calendar.route) {
-                        // Configuración para evitar múltiples instancias
-                        launchSingleTop = true
-                    }
+                    navController.navigateSingleTop(ToDoDestinations.Calendar.route)
                 },
                 onNavigateToEditTask = { taskId ->
-                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId)) {
-                        // Configuración para evitar múltiples instancias
-                        launchSingleTop = true
-                    }
+                    navController.navigateSingleTop(ToDoDestinations.EditTask.createRoute(taskId))
                 }
             )
         }
@@ -77,17 +70,7 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
             AddTaskScreen(
                 viewModel = viewModel,
                 initialDate = date,
-                onNavigateBack = {
-                    // Asegurarse de que existe una pantalla a la que volver
-                    if (navController.previousBackStackEntry != null) {
-                        navController.popBackStack()
-                    } else {
-                        // Si no hay pantalla anterior, navegar a la lista de tareas
-                        navController.navigate(ToDoDestinations.TaskList.route) {
-                            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
-                        }
-                    }
-                },
+                onNavigateBack = { navController.safeNavigateBack() },
                 isEditMode = false
             )
         }
@@ -104,17 +87,7 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
             
             AddTaskScreen(
                 viewModel = viewModel,
-                onNavigateBack = {
-                    // Asegurarse de que existe una pantalla a la que volver
-                    if (navController.previousBackStackEntry != null) {
-                        navController.popBackStack()
-                    } else {
-                        // Si no hay pantalla anterior, navegar a la lista de tareas
-                        navController.navigate(ToDoDestinations.TaskList.route) {
-                            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
-                        }
-                    }
-                },
+                onNavigateBack = { navController.safeNavigateBack() },
                 taskId = taskId,
                 isEditMode = true
             )
@@ -123,30 +96,30 @@ fun ToDoNavigation(viewModel: TaskPresenter) {
         composable(ToDoDestinations.Calendar.route) {
             CalendarScreen(
                 viewModel = viewModel,
-                onNavigateBack = {
-                    // Asegurarse de que existe una pantalla a la que volver
-                    if (navController.previousBackStackEntry != null) {
-                        navController.popBackStack()
-                    } else {
-                        // Si no hay pantalla anterior, navegar a la lista de tareas
-                        navController.navigate(ToDoDestinations.TaskList.route) {
-                            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
-                        }
-                    }
-                },
+                onNavigateBack = { navController.safeNavigateBack() },
                 onNavigateToAddTask = { date ->
-                    navController.navigate(ToDoDestinations.AddTask.createRoute(date)) {
-                        // Configuración para evitar múltiples instancias
-                        launchSingleTop = true
-                    }
+                    navController.navigateSingleTop(ToDoDestinations.AddTask.createRoute(date))
                 },
                 onNavigateToEditTask = { taskId ->
-                    navController.navigate(ToDoDestinations.EditTask.createRoute(taskId)) {
-                        // Configuración para evitar múltiples instancias
-                        launchSingleTop = true
-                    }
+                    navController.navigateSingleTop(ToDoDestinations.EditTask.createRoute(taskId))
                 }
             )
+        }
+    }
+}
+
+private fun NavController.navigateSingleTop(route: String) {
+    navigate(route) {
+        launchSingleTop = true
+    }
+}
+
+private fun NavController.safeNavigateBack() {
+    if (previousBackStackEntry != null) {
+        popBackStack()
+    } else {
+        navigate(ToDoDestinations.TaskList.route) {
+            popUpTo(ToDoDestinations.TaskList.route) { inclusive = true }
         }
     }
 } 

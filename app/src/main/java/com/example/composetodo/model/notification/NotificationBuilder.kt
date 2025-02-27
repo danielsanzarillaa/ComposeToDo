@@ -43,26 +43,29 @@ class NotificationBuilder(private val context: Context) {
      * Crea el canal de notificaciones (requerido para Android 8.0+)
      */
     private fun createNotificationChannel() {
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-            description = CHANNEL_DESCRIPTION
-            setShowBadge(true)
-            enableLights(true)
-            lightColor = Color.RED
-            enableVibration(true)
-            vibrationPattern = longArrayOf(0, 250, 250, 250)
-            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+                description = CHANNEL_DESCRIPTION
+                setShowBadge(true)
+                enableLights(true)
+                lightColor = Color.RED
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 250, 250, 250)
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+            }
+            
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.apply {
+                createNotificationChannel(channel)
+            }
         }
-        
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
     }
 
     /**
      * Comprueba si la aplicación tiene permiso para mostrar notificaciones
      */
-    fun hasNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    fun hasNotificationPermission(): Boolean = 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPermission = ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
@@ -76,7 +79,6 @@ class NotificationBuilder(private val context: Context) {
         } else {
             true // En versiones anteriores a Android 13, no se necesita permiso explícito
         }
-    }
 
     /**
      * Construye y muestra una notificación para una tarea
@@ -105,19 +107,18 @@ class NotificationBuilder(private val context: Context) {
             showNotification(task.id, builder)
             
         } catch (e: Exception) {
-            Log.e(TAG, "Error general al mostrar notificación: ${e.message}", e)
+            Log.e(TAG, "Error al mostrar notificación: ${e.message}", e)
         }
     }
     
     /**
      * Crea el intent para abrir la aplicación al tocar la notificación
      */
-    private fun createTaskIntent(task: Task): Intent {
-        return Intent(context, MainActivity::class.java).apply {
+    private fun createTaskIntent(task: Task): Intent =
+        Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("taskId", task.id)
         }
-    }
     
     /**
      * Crea el PendingIntent para la notificación
@@ -140,10 +141,12 @@ class NotificationBuilder(private val context: Context) {
         pendingIntent: PendingIntent,
         defaultSoundUri: android.net.Uri
     ): NotificationCompat.Builder {
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        val description = task.description.ifEmpty { "Tarea pendiente" }
+        
+        return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Icono de alarma estándar
             .setContentTitle(task.title)
-            .setContentText(task.description.ifEmpty { "Tarea pendiente" })
+            .setContentText(description)
             .setPriority(NotificationCompat.PRIORITY_MAX) // Prioridad máxima
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -167,15 +170,14 @@ class NotificationBuilder(private val context: Context) {
             .setOngoing(false)
             // Estilo de notificación expandible
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText(task.description.ifEmpty { "Tarea pendiente" })
+                .bigText(description)
                 .setBigContentTitle(task.title)
                 .setSummaryText("Recordatorio de tarea"))
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-        }
-        
-        return builder
+            .apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+                }
+            }
     }
     
     /**
@@ -187,25 +189,24 @@ class NotificationBuilder(private val context: Context) {
             return
         }
         
-        // Primer intento con NotificationManagerCompat
         try {
-            Log.d(TAG, "Intentando mostrar notificación con NotificationManagerCompat")
-            val notificationManager = NotificationManagerCompat.from(context)
-            notificationManager.notify(taskId, builder.build())
+            NotificationManagerCompat.from(context).notify(taskId, builder.build())
             Log.d(TAG, "Notificación mostrada correctamente para tarea: $taskId")
-            return
         } catch (e: SecurityException) {
             Log.e(TAG, "SecurityException al mostrar notificación: ${e.message}")
+            showWithFallbackMethod(taskId, builder)
         } catch (e: Exception) {
-            Log.e(TAG, "Error al mostrar notificación con NotificationManagerCompat: ${e.message}")
+            Log.e(TAG, "Error al mostrar notificación: ${e.message}")
+            showWithFallbackMethod(taskId, builder)
         }
-        
-        // Segundo intento con NotificationManager directo
+    }
+    
+    private fun showWithFallbackMethod(taskId: Int, builder: NotificationCompat.Builder) {
         try {
-            Log.d(TAG, "Intentando mostrar notificación con NotificationManager directo")
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(taskId, builder.build())
-            Log.d(TAG, "Notificación mostrada correctamente con NotificationManager directo para tarea: $taskId")
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.apply {
+                notify(taskId, builder.build())
+                Log.d(TAG, "Notificación mostrada con método alternativo para tarea: $taskId")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error definitivo al mostrar notificación: ${e.message}", e)
         }

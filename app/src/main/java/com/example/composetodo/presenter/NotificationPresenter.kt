@@ -9,10 +9,10 @@ import android.util.Log
 import com.example.composetodo.model.Task
 import com.example.composetodo.model.notification.NotificationBuilder
 import com.example.composetodo.model.notification.NotificationReceiver
+import kotlinx.coroutines.*
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.*
 
 /**
  * Presentador responsable de programar notificaciones para tareas
@@ -55,27 +55,8 @@ class NotificationPresenter(private val context: Context) {
             
             if (!success) {
                 Log.w(TAG, "No se pudo programar la notificación después de $MAX_RETRY_ATTEMPTS intentos")
-                
-                // Como último recurso, mostrar inmediatamente si está próxima
-                if (isReminderSoon(task.reminderDateTime)) {
-                    withContext(Dispatchers.Main) {
-                        notificationBuilder.showTaskNotification(task)
-                    }
-                }
             }
         }
-    }
-    
-    /**
-     * Determina si un recordatorio ocurrirá en menos de 5 minutos
-     */
-    private fun isReminderSoon(reminderDateTime: LocalDateTime?): Boolean {
-        if (reminderDateTime == null) return false
-        
-        val now = LocalDateTime.now()
-        val fiveMinutesLater = now.plusMinutes(5)
-        
-        return reminderDateTime.isAfter(now) && reminderDateTime.isBefore(fiveMinutesLater)
     }
     
     /**
@@ -90,29 +71,31 @@ class NotificationPresenter(private val context: Context) {
         
         if (reminderTimeMillis <= now) return false
         
-        // Crear intent para la notificación
         val intent = createNotificationIntent(task, reminderDateTime)
         val pendingIntent = createPendingIntent(task.id, intent)
         
-        // Programar la alarma
         return alarmManager?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && canScheduleExactAlarms(it)) {
-                it.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    reminderTimeMillis,
-                    pendingIntent
-                )
-            } else {
-                it.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    reminderTimeMillis,
-                    pendingIntent
-                )
-            }
+            scheduleExactAlarm(it, reminderTimeMillis, pendingIntent)
             true
         } ?: run {
             Log.e(TAG, "AlarmManager no disponible")
             false
+        }
+    }
+    
+    private fun scheduleExactAlarm(alarmManager: AlarmManager, timeMillis: Long, pendingIntent: PendingIntent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && canScheduleExactAlarms(alarmManager)) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                timeMillis,
+                pendingIntent
+            )
+        } else {
+            alarmManager.setExact(
+                AlarmManager.RTC_WAKEUP,
+                timeMillis,
+                pendingIntent
+            )
         }
     }
     
@@ -145,8 +128,8 @@ class NotificationPresenter(private val context: Context) {
     /**
      * Comprueba si se pueden programar alarmas exactas (compatible con API < 31)
      */
-    private fun canScheduleExactAlarms(alarmManager: AlarmManager): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    private fun canScheduleExactAlarms(alarmManager: AlarmManager): Boolean = 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 alarmManager.canScheduleExactAlarms()
             } catch (e: Exception) {
@@ -154,15 +137,13 @@ class NotificationPresenter(private val context: Context) {
                 false
             }
         } else {
-            true // En versiones anteriores a Android 12, siempre es posible
+            true
         }
-    }
     
     /**
      * Cancela una notificación programada
      */
     fun cancelNotification(taskId: Int) {
-        // Crear intent y pendingIntent
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             action = NotificationReceiver.ACTION_SHOW_NOTIFICATION
             putExtra("taskId", taskId)
@@ -170,7 +151,6 @@ class NotificationPresenter(private val context: Context) {
         
         val pendingIntent = createPendingIntent(taskId, intent)
         
-        // Cancelar la alarma
         alarmManager?.cancel(pendingIntent)
         
         try {
@@ -179,7 +159,10 @@ class NotificationPresenter(private val context: Context) {
             Log.w(TAG, "Error al cancelar pendingIntent: ${e.message}")
         }
         
-        // Limpiar preferencias
+        clearNotificationPreferences(taskId)
+    }
+    
+    private fun clearNotificationPreferences(taskId: Int) {
         try {
             context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
                 .edit()
