@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +41,9 @@ fun AddTaskScreen(
     val today = LocalDate.now()
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    
+    // Estado para controlar si se está procesando el guardado
+    var isSaving by remember { mutableStateOf(false) }
 
     // Estados de la tarea
     var taskTitle by remember { mutableStateOf("") }
@@ -53,9 +58,8 @@ fun AddTaskScreen(
 
     // Estados para los diálogos
     var showDatePicker by remember { mutableStateOf(false) }
-    var showReminderDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
-    var isForReminder by remember { mutableStateOf(false) }
+    var showDatePickerInDialog by remember { mutableStateOf(false) }
+    var showTimePickerInDialog by remember { mutableStateOf(false) }
 
     val selectedTask by viewModel.selectedTask.collectAsState()
 
@@ -126,10 +130,10 @@ fun AddTaskScreen(
         }
     }
 
-    // Diálogo de selección de fecha para el recordatorio
-    if (showReminderDatePicker) {
+    // Diálogo para seleccionar fecha del recordatorio
+    if (showDatePickerInDialog) {
         Dialog(
-            onDismissRequest = { showReminderDatePicker = false },
+            onDismissRequest = { showDatePickerInDialog = false },
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true
@@ -151,8 +155,8 @@ fun AddTaskScreen(
                         onDateSelected = { date ->
                             if (!date.isBefore(today)) {
                                 reminderDate = date
-                                showReminderDatePicker = false
-                                showTimePicker = true
+                                showDatePickerInDialog = false
+                                showTimePickerInDialog = true
                             }
                         },
                         modifier = Modifier.padding(8.dp)
@@ -160,9 +164,9 @@ fun AddTaskScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        TextButton(onClick = { showReminderDatePicker = false }) {
+                        TextButton(onClick = { showDatePickerInDialog = false }) {
                             Text("Cancelar")
                         }
                     }
@@ -171,16 +175,10 @@ fun AddTaskScreen(
         }
     }
 
-    // Diálogo de selección de hora para el recordatorio
-    if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = reminderTime.hour,
-            initialMinute = reminderTime.minute,
-            is24Hour = true
-        )
-        
+    // Diálogo para seleccionar hora del recordatorio
+    if (showTimePickerInDialog) {
         Dialog(
-            onDismissRequest = { showTimePicker = false },
+            onDismissRequest = { showTimePickerInDialog = false },
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true
@@ -197,7 +195,12 @@ fun AddTaskScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("Hora del recordatorio", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    val timePickerState = rememberTimePickerState(
+                        initialHour = reminderTime.hour,
+                        initialMinute = reminderTime.minute,
+                        is24Hour = true
+                    )
                     
                     TimePicker(
                         state = timePickerState,
@@ -205,19 +208,21 @@ fun AddTaskScreen(
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
+                    
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        TextButton(onClick = { showTimePicker = false }) {
+                        TextButton(onClick = { showTimePickerInDialog = false }) {
                             Text("Cancelar")
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = {
-                            reminderTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                            reminderDateTime = LocalDateTime.of(reminderDate, reminderTime)
-                            showTimePicker = false
-                        }) {
+                        Button(
+                            onClick = {
+                                reminderTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                                reminderDateTime = LocalDateTime.of(reminderDate, reminderTime)
+                                showTimePickerInDialog = false
+                            }
+                        ) {
                             Text("Confirmar")
                         }
                     }
@@ -283,26 +288,60 @@ fun AddTaskScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Recordatorio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Surface(
-                    modifier = Modifier.fillMaxWidth().clickable { showReminderDatePicker = true },
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = reminderDateTime?.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
-                                ?: "Seleccionar recordatorio"
-                        )
-                        Icon(imageVector = Icons.Default.DateRange, contentDescription = "Seleccionar recordatorio", tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
+                
                 if (reminderDateTime != null) {
-                    TextButton(onClick = { reminderDateTime = null }) {
-                        Text("Eliminar recordatorio", color = MaterialTheme.colorScheme.error)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Fecha: ${reminderDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Hora: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                            
+                            Row {
+                                IconButton(onClick = { showDatePickerInDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.DateRange,
+                                        contentDescription = "Cambiar recordatorio",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                IconButton(onClick = { reminderDateTime = null }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Eliminar recordatorio",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Button(
+                        onClick = { showDatePickerInDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Añadir recordatorio")
                     }
                 }
             }
@@ -333,7 +372,8 @@ fun AddTaskScreen(
 
             Button(
                 onClick = {
-                    if (taskTitle.isNotBlank() && !selectedDate.isBefore(today)) {
+                    if (taskTitle.isNotBlank() && !selectedDate.isBefore(today) && !isSaving) {
+                        isSaving = true // Desactivar el botón mientras se guarda
                         scope.launch {
                             if (isEditMode && taskId > 0) {
                                 viewModel.updateExistingTask(taskId, taskTitle, taskDescription, selectedPriority, selectedDate, reminderDateTime)
@@ -341,13 +381,25 @@ fun AddTaskScreen(
                                 viewModel.addTask(taskTitle, taskDescription, selectedPriority, selectedDate, reminderDateTime)
                             }
                             viewModel.clearSelectedTask()
+                            // No restauramos isSaving porque vamos a navegar hacia atrás
                             onNavigateBack()
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isSaving && taskTitle.isNotBlank() && !selectedDate.isBefore(today)
             ) {
-                Text(if (isEditMode) "Actualizar Tarea" else "Guardar Tarea")
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (isEditMode) "Actualizando..." else "Guardando...")
+                } else {
+                    Text(if (isEditMode) "Actualizar Tarea" else "Guardar Tarea")
+                }
             }
             
             // Espacio adicional al final para asegurar que el botón sea visible

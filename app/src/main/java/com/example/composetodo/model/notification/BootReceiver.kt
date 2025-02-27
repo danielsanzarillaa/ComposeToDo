@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import android.widget.Toast
 import kotlinx.coroutines.delay
 
 /**
@@ -33,13 +32,6 @@ class BootReceiver : BroadcastReceiver() {
             intent.action == "com.htc.intent.action.QUICKBOOT_POWERON") {
             
             Log.d(TAG, "Dispositivo reiniciado, reprogramando notificaciones")
-            
-            // Mostrar un Toast para informar al usuario
-            Toast.makeText(
-                context,
-                "Reprogramando recordatorios de tareas...",
-                Toast.LENGTH_LONG
-            ).show()
             
             // Usar un scope para las corrutinas
             val scope = CoroutineScope(Dispatchers.IO)
@@ -85,28 +77,8 @@ class BootReceiver : BroadcastReceiver() {
                     }
                     
                     Log.d(TAG, "Reprogramación de notificaciones completada")
-                    
-                    // Mostrar un Toast para confirmar
-                    if (pendingTasks.isNotEmpty()) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            Toast.makeText(
-                                context,
-                                "Se han reprogramado ${pendingTasks.size} recordatorios",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error en el proceso de reprogramación de notificaciones", e)
-                    
-                    // Mostrar un Toast para informar del error
-                    CoroutineScope(Dispatchers.Main).launch {
-                        Toast.makeText(
-                            context,
-                            "Error al reprogramar recordatorios: ${e.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
                 }
             }
         } else {

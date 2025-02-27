@@ -78,15 +78,24 @@ fun TaskByDateCalendarComponent(
                     },
                     onDeleteTask = { task ->
                         scope.launch {
-                            onTaskDeleted(task)
+                            // Guardar la tarea localmente antes de eliminarla
+                            val deletedTask = task
+                            onTaskDeleted(deletedTask)
+                            
+                            // Eliminar la tarea
                             viewModel.deleteTask(task.id)
+                            
+                            // Mostrar el Snackbar
                             val result = snackbarHostState.showSnackbar(
-                                message = "Tarea eliminada",
-                                actionLabel = "Deshacer",
+                                message = "Has eliminado una tarea, si te has equivocado dale recuperar",
+                                actionLabel = "Recuperar",
                                 duration = SnackbarDuration.Short
                             )
+                            
+                            // Si se hace clic en "Recuperar", recuperar la tarea
                             if (result == SnackbarResult.ActionPerformed) {
-                                lastDeletedTask?.let { viewModel.undoDeleteTask(it) }
+                                // Recuperar la tarea usando la variable local
+                                viewModel.undoDeleteTask(deletedTask)
                                 onUndoDelete()
                             }
                         }

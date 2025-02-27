@@ -171,6 +171,9 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
 
     fun undoDeleteTask(task: Task) {
         viewModelScope.launch {
+            // Log para debug
+            android.util.Log.d("TaskPresenter", "Recuperando tarea: ${task.title}")
+            
             // Utilizamos copy con id=0 para permitir que Room genere un nuevo ID
             taskDao.addTask(task.copy(id = 0))
             
@@ -180,6 +183,9 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
                 val tempTask = task.copy(id = System.currentTimeMillis().toInt())
                 notificationPresenter.scheduleNotification(tempTask)
             }
+            
+            // Log para confirmación
+            android.util.Log.d("TaskPresenter", "Tarea recuperada con éxito: ${task.title}")
         }
     }
 
