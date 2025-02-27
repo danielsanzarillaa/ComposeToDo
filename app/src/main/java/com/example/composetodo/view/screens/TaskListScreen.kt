@@ -155,9 +155,6 @@ fun TaskListScreen(
                                         reminderDateTime = LocalDateTime.now().plusSeconds(1)
                                     )
                                     viewModel.testNotification(testTask)
-                                    snackbarHostState.showSnackbar(
-                                        message = "Notificación de prueba enviada"
-                                    )
                                 }
                                 showTestNotificationDialog = false
                             }

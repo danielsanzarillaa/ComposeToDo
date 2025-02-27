@@ -11,12 +11,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
 import com.example.composetodo.model.Task
 import com.example.composetodo.MainActivity
 import android.graphics.Color
 import android.media.RingtoneManager
-import android.widget.Toast
 
 /**
  * Clase responsable de construir y mostrar notificaciones
@@ -35,8 +33,7 @@ class NotificationBuilder(private val context: Context) {
         try {
             createNotificationChannel()
         } catch (e: Exception) {
-            Log.e(TAG, "Error al crear el canal de notificaciones", e)
-            Toast.makeText(context, "Error al crear canal de notificaciones: ${e.message}", Toast.LENGTH_LONG).show()
+            // Manejo silencioso de errores
         }
     }
 
@@ -45,7 +42,6 @@ class NotificationBuilder(private val context: Context) {
      */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(TAG, "Creando canal de notificaciones")
             val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
                 description = CHANNEL_DESCRIPTION
@@ -59,16 +55,6 @@ class NotificationBuilder(private val context: Context) {
             
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
-            Log.d(TAG, "Canal de notificaciones creado correctamente")
-            
-            // Verificar que el canal se creó correctamente
-            val createdChannel = notificationManager.getNotificationChannel(CHANNEL_ID)
-            if (createdChannel != null) {
-                Log.d(TAG, "Canal verificado: ${createdChannel.name}, importancia: ${createdChannel.importance}")
-            } else {
-                Log.e(TAG, "¡Error! El canal no se creó correctamente")
-                Toast.makeText(context, "Error: No se pudo crear el canal de notificaciones", Toast.LENGTH_LONG).show()
-            }
         }
     }
 
@@ -77,19 +63,11 @@ class NotificationBuilder(private val context: Context) {
      */
     fun hasNotificationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission = ContextCompat.checkSelfPermission(
+            ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-            Log.d(TAG, "Permisos de notificación (Android 13+): $hasPermission")
-            
-            if (!hasPermission) {
-                Toast.makeText(context, "¡No tienes permisos de notificación! Ve a Configuración > Apps > ComposeToDo > Notificaciones", Toast.LENGTH_LONG).show()
-            }
-            
-            hasPermission
         } else {
-            Log.d(TAG, "Permisos de notificación (Android pre-13): true")
             true // En versiones anteriores a Android 13, no se necesita permiso explícito
         }
     }
@@ -100,11 +78,8 @@ class NotificationBuilder(private val context: Context) {
     fun showTaskNotification(task: Task) {
         try {
             if (!hasNotificationPermission()) {
-                Log.e(TAG, "No se tienen permisos para mostrar notificaciones")
                 return
             }
-
-            Log.d(TAG, "Preparando notificación para tarea: ID=${task.id}, título=${task.title}")
             
             // Intent para abrir la aplicación cuando se toque la notificación
             val intent = Intent(context, MainActivity::class.java).apply {
@@ -165,31 +140,18 @@ class NotificationBuilder(private val context: Context) {
                 
                 if (hasNotificationPermission()) {
                     notificationManager.notify(task.id, builder.build())
-                    Log.d(TAG, "Notificación mostrada correctamente para tarea ID=${task.id}")
-                    
-                    // Mostrar un Toast para confirmar que la notificación se envió
-                    Toast.makeText(context, "Notificación enviada: ${task.title}", Toast.LENGTH_SHORT).show()
-                } else {
-                    Log.e(TAG, "No se pudo mostrar la notificación por falta de permisos")
-                    Toast.makeText(context, "Error: No tienes permisos para mostrar notificaciones", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error al mostrar la notificación con NotificationManagerCompat", e)
-                
                 // Intento alternativo usando NotificationManager directamente
                 try {
                     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     notificationManager.notify(task.id, builder.build())
-                    Log.d(TAG, "Notificación mostrada correctamente usando NotificationManager directo")
-                    Toast.makeText(context, "Notificación enviada (método alternativo): ${task.title}", Toast.LENGTH_SHORT).show()
                 } catch (e2: Exception) {
-                    Log.e(TAG, "Error crítico al mostrar la notificación incluso con método alternativo", e2)
-                    Toast.makeText(context, "Error crítico al mostrar notificación: ${e2.message}", Toast.LENGTH_LONG).show()
+                    // Manejo silencioso de errores
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error general al mostrar la notificación", e)
-            Toast.makeText(context, "Error general al mostrar notificación: ${e.message}", Toast.LENGTH_LONG).show()
+            // Manejo silencioso de errores
         }
     }
 } 
