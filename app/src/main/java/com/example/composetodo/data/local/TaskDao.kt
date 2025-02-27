@@ -4,6 +4,7 @@ import androidx.room.*
 import com.example.composetodo.model.Task
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Dao
 interface TaskDao {
@@ -49,6 +50,14 @@ interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTask(task: Task)
 
+    /**
+     * Inserta una tarea y devuelve el ID generado
+     * @param task La tarea a insertar
+     * @return El ID generado para la tarea
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addTaskAndGetId(task: Task): Long
+
     @Delete
     suspend fun deleteTask(task: Task)
 
@@ -60,4 +69,7 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET isCompleted = :isCompleted WHERE id = :taskId")
     suspend fun updateTaskStatus(taskId: Int, isCompleted: Boolean)
+    @Query("UPDATE tasks SET reminderDateTime = :reminderDateTime WHERE id = :taskId")
+    suspend fun updateTaskReminder(taskId: Int, reminderDateTime: LocalDateTime?)
+
 } 

@@ -14,7 +14,9 @@ data class Task(
     val priority: Priority,
     val date: LocalDateTime = LocalDateTime.now(),
     val scheduledDate: LocalDate = LocalDate.now(),
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val reminderDateTime: LocalDateTime? = null
+
 )
 
 enum class Priority {
