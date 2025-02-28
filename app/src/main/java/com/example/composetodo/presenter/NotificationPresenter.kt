@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.example.composetodo.model.Task
-import com.example.composetodo.model.notification.NotificationBuilder
 import com.example.composetodo.model.notification.NotificationReceiver
 import kotlinx.coroutines.*
 import java.time.LocalDateTime
@@ -25,7 +24,6 @@ class NotificationPresenter(private val context: Context) {
         private const val RETRY_DELAY_MS = 1000L
     }
     
-    private val notificationBuilder = NotificationBuilder(context)
     private val alarmManager: AlarmManager? by lazy {
         context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
     }

@@ -248,6 +248,3 @@ class TaskPresenter(application: Application) : AndroidViewModel(application) {
     }
 }
 
-sealed class TaskEvent {
-    data class UpcomingReminders(val tasks: List<Task>) : TaskEvent()
-} 

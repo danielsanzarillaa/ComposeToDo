@@ -33,10 +33,6 @@ class NotificationReceiver : BroadcastReceiver() {
         val taskId = intent.getIntExtra("taskId", -1)
         if (taskId == -1) return
         
-        val isBackup = intent.getBooleanExtra("isBackup", false)
-        
-        if (isBackup && isBackupAlreadyShown(context, taskId)) return
-        
         val taskTitle = intent.getStringExtra("taskTitle")
         val taskDescription = intent.getStringExtra("taskDescription") ?: ""
         val scheduledTime = intent.getStringExtra("scheduledTime")
@@ -44,7 +40,7 @@ class NotificationReceiver : BroadcastReceiver() {
         Log.d(TAG, "Procesando notificación para tarea: $taskId, título: $taskTitle")
         
         val wakeLock = acquireWakeLock(context)
-        processNotificationWithWakeLock(context, taskId, taskTitle, taskDescription, scheduledTime, isBackup, wakeLock)
+        processNotificationWithWakeLock(context, taskId, taskTitle, taskDescription, scheduledTime, wakeLock)
     }
     
     private fun processNotificationWithWakeLock(
@@ -53,14 +49,12 @@ class NotificationReceiver : BroadcastReceiver() {
         taskTitle: String?,
         taskDescription: String,
         scheduledTime: String?,
-        isBackup: Boolean,
         wakeLock: PowerManager.WakeLock?
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 processNotification(
-                    context, taskId, taskTitle, taskDescription,
-                    scheduledTime, isBackup
+                    context, taskId, taskTitle, taskDescription, scheduledTime
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error al procesar notificación: ${e.message}", e)
@@ -75,8 +69,7 @@ class NotificationReceiver : BroadcastReceiver() {
         taskId: Int,
         taskTitle: String?,
         taskDescription: String,
-        scheduledTime: String?,
-        isBackup: Boolean
+        scheduledTime: String?
     ) {
         try {
             val dbTask = TaskDatabase.getDatabase(context).taskDao().getTaskById(taskId)
@@ -86,8 +79,7 @@ class NotificationReceiver : BroadcastReceiver() {
                         "Tarea no encontrada en DB, usando datos del intent")
             
             val taskToShow = determineTaskToShow(
-                dbTask, taskId, taskTitle, taskDescription, 
-                scheduledTime, isBackup
+                dbTask, taskId, taskTitle, taskDescription, scheduledTime
             )
             
             showNotificationIfPossible(context, taskToShow, taskId)
@@ -101,24 +93,11 @@ class NotificationReceiver : BroadcastReceiver() {
         taskId: Int,
         taskTitle: String?,
         taskDescription: String,
-        scheduledTime: String?,
-        isBackup: Boolean
+        scheduledTime: String?
     ): Task? = when {
-        dbTask != null && !dbTask.isCompleted && isReminderValid(dbTask) -> {
-            customizeTaskMessage(dbTask, isBackup)
-        }
-        taskTitle != null -> {
-            createTaskFromIntent(taskId, taskTitle, taskDescription, scheduledTime, isBackup)
-        }
+        dbTask != null && !dbTask.isCompleted && isReminderValid(dbTask) -> dbTask
+        taskTitle != null -> createTaskFromIntent(taskId, taskTitle, taskDescription, scheduledTime)
         else -> null
-    }
-    
-    private fun customizeTaskMessage(task: Task, isBackup: Boolean): Task = when {
-        isBackup -> task.copy(
-            title = "${task.title} (recordatorio)",
-            description = "¡No olvides esta tarea! ${task.description}"
-        )
-        else -> task
     }
     
     private suspend fun showNotificationIfPossible(
@@ -147,18 +126,15 @@ class NotificationReceiver : BroadcastReceiver() {
         taskId: Int,
         taskTitle: String,
         taskDescription: String,
-        scheduledTime: String?,
-        isBackup: Boolean
+        scheduledTime: String?
     ): Task {
-        val baseTask = Task(
+        return Task(
             id = taskId,
             title = taskTitle,
             description = taskDescription,
             priority = Priority.ALTA,
             reminderDateTime = parseScheduledTime(scheduledTime)
         )
-        
-        return customizeTaskMessage(baseTask, isBackup)
     }
     
     private fun parseScheduledTime(scheduledTime: String?): LocalDateTime = 
@@ -170,14 +146,6 @@ class NotificationReceiver : BroadcastReceiver() {
                 LocalDateTime.now()
             }
         } ?: LocalDateTime.now()
-    
-    private fun isBackupAlreadyShown(context: Context, taskId: Int): Boolean = try {
-        context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
-            .getBoolean("notification_shown_$taskId", false)
-    } catch (e: Exception) {
-        Log.e(TAG, "Error al verificar estado de notificación: ${e.message}", e)
-        false
-    }
     
     private fun markNotificationAsShown(context: Context, taskId: Int) {
         try {

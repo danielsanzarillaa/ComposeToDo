@@ -43,27 +43,23 @@ class NotificationBuilder(private val context: Context) {
      * Crea el canal de notificaciones (requerido para Android 8.0+)
      */
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-                description = CHANNEL_DESCRIPTION
-                setShowBadge(true)
-                enableLights(true)
-                lightColor = Color.RED
-                enableVibration(true)
-                vibrationPattern = longArrayOf(0, 250, 250, 250)
-                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
-            }
-            
-            (context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.apply {
-                createNotificationChannel(channel)
-            }
+        val importance = NotificationManager.IMPORTANCE_HIGH
+        val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+            description = CHANNEL_DESCRIPTION
+            setShowBadge(true)
+            enableLights(true)
+            lightColor = Color.RED
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 250, 250, 250)
+            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+        }
+
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.apply {
+            createNotificationChannel(channel)
         }
     }
 
-    /**
-     * Comprueba si la aplicación tiene permiso para mostrar notificaciones
-     */
+
     fun hasNotificationPermission(): Boolean = 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPermission = ContextCompat.checkSelfPermission(
@@ -90,9 +86,7 @@ class NotificationBuilder(private val context: Context) {
                 Log.w(TAG, "Sin permiso para mostrar notificaciones")
                 return
             }
-            
-            Log.d(TAG, "Construyendo notificación para tarea: ${task.id} - ${task.title}")
-            
+
             // Intent para abrir la aplicación cuando se toque la notificación
             val intent = createTaskIntent(task)
             val pendingIntent = createPendingIntent(task, intent)
